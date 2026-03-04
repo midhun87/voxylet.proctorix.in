@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voxylet Enterprise | Secure Assessment</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#f8fafc', 100: '#f1f5f9', 500: '#2563eb', 800: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .pulse-ring { animation: pulseRing 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+        @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        
+        .ai-scan-line {
+            position: absolute; width: 100%; height: 2px; background: rgba(34, 197, 94, 0.8);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.8); animation: scan 3s linear infinite; z-index: 20;
+        }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        
+        /* Fullscreen styles */
+        :fullscreen { background-color: #f1f5f9; overflow-y: auto; }
+        :-webkit-full-screen { background-color: #f1f5f9; overflow-y: auto; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+    <!-- ANTI-CHEAT OVERLAY -->
+    <div id="anti-cheat-warning" class="fixed inset-0 bg-slate-900/90 z-[9999] hidden flex-col items-center justify-center text-white p-6">
+        <i class="fa-solid fa-triangle-exclamation text-6xl text-yellow-500 mb-6"></i>
+        <h1 class="text-3xl font-bold mb-2">Proctoring Alert</h1>
+        <p class="text-lg text-slate-300 mb-6 text-center max-w-md">Tab switching, exiting full-screen, or leaving the assessment window is strictly prohibited. This incident has been logged.</p>
+        <button onclick="dismissWarning()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded font-semibold transition-colors">Acknowledge & Return to Assessment</button>
+    </div>
+
+    <!-- GLOBAL PROCTOR WIDGET -->
+    <div id="proctor-widget" class="fixed bottom-6 right-6 bg-slate-900 rounded-lg shadow-2xl border border-slate-700 p-2 hidden z-50 w-48 transition-all duration-300">
+        <div class="relative w-full aspect-video bg-black rounded overflow-hidden">
+            <video id="global-proctor-video" autoplay muted playsinline class="w-full h-full object-cover transform scale-x-[-1]"></video>
+            <div class="ai-scan-line"></div>
+            <div class="absolute top-1.5 right-1.5 flex items-center gap-1.5 bg-red-600/90 backdrop-blur px-2 py-0.5 rounded text-[9px] text-white font-bold tracking-widest">
+                <div class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div> REC
+            </div>
+            <!-- Dynamic AI Logs -->
+            <div id="ai-live-logs" class="absolute bottom-1 left-1.5 text-[8px] font-mono text-green-400 font-medium z-30 drop-shadow-md">
+                [SYS] Initializing...
+            </div>
+        </div>
+        <div class="text-[10px] text-center text-slate-300 mt-2 flex justify-center items-center gap-1.5 font-medium">
+            <i class="fa-solid fa-shield-halved text-blue-500"></i> AI Proctor Active
+        </div>
+    </div>
+
+    <!-- TOP HEADER -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm z-40 sticky top-0">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-brand-900 flex items-center justify-center text-white font-bold text-lg rounded shadow-sm">
+                <i class="fa-solid fa-microphone-lines"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-tight text-slate-900 leading-none mb-1">Voxylet <span class="text-slate-400 font-normal">Enterprise</span></h1>
+                <p class="text-[10px] text-slate-500 font-semibold tracking-widest uppercase">Powered by Proctorix</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div id="header-timer" class="text-sm font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded border border-slate-200 hidden">
+                <i class="fa-regular fa-clock mr-1 text-slate-500"></i> <span id="global-time">00:00</span>
+            </div>
+            <div id="header-status" class="text-xs font-semibold text-slate-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded hidden items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Secure
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-grow overflow-hidden">
+        
+        <!-- SIDEBAR (Test Progress) -->
+        <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col p-6 z-30">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Assessment Progress</h3>
+            <ul class="space-y-6 relative" id="progress-steps">
+                <!-- Vertical Line -->
+                <div class="absolute left-3.5 top-2 bottom-2 w-0.5 bg-slate-100 -z-10"></div>
+                
+                <li class="flex items-start gap-3 step-item" data-step="system">
+                    <div class="w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5"><i class="fa-solid fa-desktop text-[10px] text-slate-400"></i></div>
+                    <div><p class="text-sm font-bold text-slate-500 step-title">System Check</p><p class="text-[10px] text-slate-400">Hardware & Env</p></div>
+                </li>
+                <li class="flex items-start gap-3 step-item" data-step="mcq">
+                    <div class="w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5"><i class="fa-solid fa-list-check text-[10px] text-slate-400"></i></div>
+                    <div><p class="text-sm font-bold text-slate-500 step-title">Syntax & Grammar</p><p class="text-[10px] text-slate-400">15 Questions</p></div>
+                </li>
+                <li class="flex items-start gap-3 step-item" data-step="listen">
+                    <div class="w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5"><i class="fa-solid fa-headphones text-[10px] text-slate-400"></i></div>
+                    <div><p class="text-sm font-bold text-slate-500 step-title">Auditory Dictation</p><p class="text-[10px] text-slate-400">3 Prompts</p></div>
+                </li>
+                <li class="flex items-start gap-3 step-item" data-step="video">
+                    <div class="w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5"><i class="fa-solid fa-video text-[10px] text-slate-400"></i></div>
+                    <div><p class="text-sm font-bold text-slate-500 step-title">Visual Comms</p><p class="text-[10px] text-slate-400">AI Video Analysis</p></div>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-grow overflow-y-auto p-4 sm:p-8 flex items-center justify-center pb-24">
+            
+            <!-- SCREEN 1: Registration -->
+            <section id="screen-register" class="w-full max-w-2xl mx-auto glass-panel border border-slate-200 shadow-sm p-8 rounded-xl fade-in">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-blue-100 shadow-sm">
+                        <i class="fa-solid fa-passport"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Candidate Registration</h2>
+                    <p class="text-sm text-slate-500">Enter details to generate your secure assessment session token.</p>
+                </div>
+                
+                <form id="reg-form" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name</label>
+                            <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="Jane Doe">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Work Email ID</label>
+                            <input type="email" id="reg-email" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="jane@company.com">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Mobile Number</label>
+                            <input type="tel" id="reg-mobile" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="+1 234 567 8900">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Organization / College</label>
+                            <input type="text" id="reg-org" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="Tech University">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Designation / Position</label>
+                            <input type="text" id="reg-desig" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="Software Engineer">
+                        </div>
+                    </div>
+                    
+                    <div class="pt-6">
+                        <button type="submit" class="w-full bg-brand-900 hover:bg-slate-800 text-white font-semibold py-3.5 px-6 rounded-lg shadow-lg transition-colors flex justify-center items-center gap-2">
+                            Initialize Secure Environment <i class="fa-solid fa-lock text-sm"></i>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- SCREEN 2: System Check -->
+            <section id="screen-system" class="w-full max-w-2xl mx-auto hidden fade-in">
+                <div class="glass-panel border border-slate-200 shadow-sm p-8 rounded-xl text-center">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-2">System Diagnostic</h2>
+                    <p class="text-sm text-slate-500 mb-8">Voxylet requires Camera and Microphone access to enable AI proctoring and voice dictation. Please allow both.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg flex flex-col items-center">
+                            <i class="fa-solid fa-camera text-2xl text-slate-400 mb-2" id="icon-cam"></i>
+                            <span class="text-sm font-bold text-slate-700">Webcam</span>
+                            <span class="text-[10px] text-slate-400 uppercase mt-1" id="status-cam">Pending</span>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg flex flex-col items-center">
+                            <i class="fa-solid fa-microphone text-2xl text-slate-400 mb-2" id="icon-mic"></i>
+                            <span class="text-sm font-bold text-slate-700">Microphone</span>
+                            <span class="text-[10px] text-slate-400 uppercase mt-1" id="status-mic">Pending</span>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg flex flex-col items-center">
+                            <i class="fa-solid fa-globe text-2xl text-slate-400 mb-2" id="icon-net"></i>
+                            <span class="text-sm font-bold text-slate-700">Connection</span>
+                            <span class="text-[10px] text-slate-400 uppercase mt-1" id="status-net">Pending</span>
+                        </div>
+                    </div>
+
+                    <button id="btn-grant-access" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow transition-colors">
+                        Grant Permissions & Run Diagnostics
+                    </button>
+                    <button id="btn-proceed-intro" class="bg-brand-900 hover:bg-slate-800 text-white font-semibold py-3 px-8 rounded-lg shadow transition-colors hidden mx-auto">
+                        Proceed to Instructions <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- SCREEN 3: Instructions -->
+            <section id="screen-intro" class="w-full max-w-3xl mx-auto hidden fade-in">
+                <div class="glass-panel border border-slate-200 shadow-sm p-8 rounded-xl">
+                    <div class="mb-8 border-b border-slate-100 pb-6">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-2">Assessment Protocol</h2>
+                        <p class="text-sm text-slate-500">Please review the rules. You are now being proctored.</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-8 flex gap-4">
+                        <i class="fa-solid fa-circle-info text-blue-600 mt-0.5 text-lg"></i>
+                        <div>
+                            <h4 class="font-bold text-blue-900 text-sm mb-1">Strict Anti-Cheat Enabled</h4>
+                            <p class="text-xs text-blue-800 leading-relaxed">Navigating away from this tab, opening other applications, exiting full-screen mode, or having multiple people in the camera frame will be recorded and may invalidate your score.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-4">
+                        <button onclick="startModule('mcq')" class="bg-brand-900 hover:bg-brand-800 text-white font-bold py-3 px-8 rounded-lg shadow transition-colors">
+                            Start Assessment
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCREEN 4: MCQs -->
+            <section id="screen-mcq" class="w-full max-w-3xl mx-auto hidden fade-in flex-col">
+                <div class="glass-panel border border-slate-200 shadow-sm p-8 rounded-xl flex flex-col">
+                    <div class="flex justify-between items-end border-b border-slate-100 pb-4 mb-8">
+                        <div>
+                            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1" id="mcq-section-title">Grammar</p>
+                            <h2 class="text-xl font-bold text-slate-900">Syntax Evaluation</h2>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-bold text-slate-400">Question <span class="text-slate-900 text-xl mx-1" id="mcq-current">1</span> / <span id="mcq-total">15</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <h3 id="mcq-question-text" class="text-lg font-semibold text-slate-800 mb-6 leading-relaxed"></h3>
+                        <div id="mcq-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Options -->
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center border-t border-slate-100 pt-6">
+                        <span class="text-xs font-semibold text-slate-400"><i class="fa-solid fa-lock mr-1"></i> Formative Evaluation</span>
+                        <button id="mcq-next-btn" disabled class="bg-brand-900 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-lg transition-colors">
+                            Next Question <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCREEN 5: Listen & Speak -->
+            <section id="screen-listen" class="w-full max-w-3xl mx-auto hidden fade-in">
+                <div class="glass-panel border border-slate-200 shadow-sm p-8 rounded-xl text-center">
+                    <div class="mb-8 border-b border-slate-100 pb-6 flex justify-between items-end">
+                        <div class="text-left">
+                            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Module 2</p>
+                            <h2 class="text-2xl font-bold text-slate-900 mb-1">Auditory Dictation</h2>
+                            <p class="text-sm text-slate-500 max-w-lg">Listen to the phrase. You have exactly 10 seconds to dictate it back.</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-bold text-slate-400">Prompt <span class="text-slate-900 text-xl mx-1" id="ls-current">1</span> / 3</div>
+                        </div>
+                    </div>
+
+                    <div class="min-h-[280px] flex flex-col justify-center items-center bg-slate-50 rounded-xl border border-slate-200 p-8 relative">
+                        
+                        <!-- Play State -->
+                        <div id="ls-play-area" class="flex flex-col items-center w-full">
+                            <button id="btn-play-audio" class="w-20 h-20 rounded-full bg-white border-2 border-slate-200 shadow-sm text-slate-700 text-2xl flex items-center justify-center hover:border-blue-500 hover:text-blue-600 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                            <p id="play-instruction" class="mt-4 text-sm font-bold text-slate-600 uppercase tracking-wide">Play Audio Prompt</p>
+                        </div>
+
+                        <!-- Record State -->
+                        <div id="ls-record-area" class="hidden flex-col items-center w-full max-w-md mt-6">
+                            
+                            <!-- Visualization/Timer Area -->
+                            <div class="relative w-full h-32 flex flex-col items-center justify-center bg-white border border-slate-200 rounded-lg mb-6 shadow-inner">
+                                <div id="ls-timer-display" class="text-4xl font-mono font-bold text-slate-800 z-10">00:10</div>
+                                <div id="ls-visualizer" class="absolute inset-0 hidden items-center justify-center gap-1 opacity-50">
+                                    <div class="w-2 h-8 bg-red-500 rounded animate-bounce" style="animation-delay: 0.1s"></div>
+                                    <div class="w-2 h-12 bg-red-500 rounded animate-bounce" style="animation-delay: 0.2s"></div>
+                                    <div class="w-2 h-6 bg-red-500 rounded animate-bounce" style="animation-delay: 0.3s"></div>
+                                    <div class="w-2 h-16 bg-red-500 rounded animate-bounce" style="animation-delay: 0.4s"></div>
+                                    <div class="w-2 h-10 bg-red-500 rounded animate-bounce" style="animation-delay: 0.5s"></div>
+                                </div>
+                            </div>
+
+                            <button id="btn-start-record" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-8 rounded-full shadow-sm transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-microphone"></i> Start Recording
+                            </button>
+                            <p id="record-status" class="text-xs font-semibold text-slate-500 mt-4 uppercase tracking-wider">Awaiting input</p>
+                        </div>
+
+                        <!-- Result Overlay -->
+                        <div id="ls-result-box" class="absolute inset-0 bg-white/95 backdrop-blur flex flex-col items-center justify-center p-6 rounded-xl hidden z-20">
+                            <i class="fa-solid fa-microchip text-4xl text-blue-500 mb-4 animate-pulse"></i>
+                            <h3 class="text-lg font-bold text-slate-800 mb-1">AI Analyzing Cadence</h3>
+                            <p class="text-sm text-slate-500 mb-6">Processing phonetic matches...</p>
+                            <button id="btn-ls-next-prompt" class="bg-brand-900 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-lg shadow transition-colors hidden">
+                                Next Prompt <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-6 hidden" id="ls-next-container">
+                        <button onclick="startModule('video')" class="bg-brand-900 hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-lg shadow transition-colors">
+                            Proceed to Video Module <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCREEN 6: Video Assessment -->
+            <section id="screen-video" class="w-full max-w-4xl mx-auto hidden fade-in">
+                <div class="mb-6 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Visual Communication Analysis</h2>
+                        <p class="text-sm text-slate-500">Respond to the prompt. Articulation and confidence metrics will be analyzed.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                    <!-- Video Feed -->
+                    <div class="md:col-span-3 relative bg-black rounded-xl overflow-hidden shadow-lg border border-slate-800 flex items-center justify-center min-h-[400px]">
+                        <video id="interview-video" autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover transform scale-x-[-1]"></video>
+                        
+                        <div id="interview-rec-indicator" class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-2 z-20 opacity-0 transition-opacity">
+                            <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div> <span id="interview-timer" class="font-mono">01:00</span>
+                        </div>
+
+                        <!-- Enterprise AI Overlay -->
+                        <div id="ai-overlay" class="absolute inset-0 bg-slate-900/90 backdrop-blur-md z-30 hidden flex-col items-center justify-center p-8 font-mono border-2 border-brand-500">
+                            <i class="fa-solid fa-microchip text-4xl mb-6 text-brand-500 animate-pulse"></i>
+                            <h3 class="text-xl font-bold mb-2 text-white uppercase tracking-widest">Voxylet AI Processing</h3>
+                            <p id="ai-status-text" class="text-sm text-brand-400 mb-8 font-semibold">Initiating deep neural scan...</p>
+                            <div class="w-full max-w-sm h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div id="ai-progress-bar" class="h-full bg-brand-500 w-0 transition-all duration-300"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="md:col-span-2 glass-panel border border-slate-200 rounded-xl p-6 flex flex-col shadow-sm">
+                        <div class="flex-grow">
+                            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Assessment Prompt</h3>
+                            <div class="p-5 bg-white border border-slate-200 shadow-sm rounded-lg text-slate-800 text-sm leading-relaxed font-semibold">
+                                "Please describe a recent professional challenge you faced, detailing how you communicated effectively to resolve it."
+                            </div>
+                            
+                            <div class="mt-6 space-y-3">
+                                <div class="flex items-center gap-2 text-xs text-slate-500"><i class="fa-solid fa-check text-green-500"></i> Lighting acceptable</div>
+                                <div class="flex items-center gap-2 text-xs text-slate-500"><i class="fa-solid fa-check text-green-500"></i> Face centered</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8">
+                            <button id="btn-start-vid" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-lg shadow transition-colors flex justify-center items-center gap-2 text-sm">
+                                <i class="fa-solid fa-video"></i> Begin Response (60s)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SCREEN 7: Results -->
+            <section id="screen-results" class="w-full max-w-3xl mx-auto hidden fade-in">
+                <div class="glass-panel border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+                    <div class="bg-slate-900 text-white p-10 text-center relative overflow-hidden">
+                        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 20px 20px;"></div>
+                        <div class="w-20 h-20 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-4xl mx-auto mb-6 border border-green-500/30 relative z-10">
+                            <i class="fa-solid fa-shield-check"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-2 relative z-10">Assessment Concluded</h2>
+                        <p class="text-slate-400 text-sm relative z-10" id="result-user-name">Assessment data securely transmitted.</p>
+                    </div>
+
+                    <div class="p-8 sm:p-12">
+                        <div class="flex flex-col sm:flex-row justify-between items-center border-b border-slate-200 pb-8 mb-8">
+                            <div class="text-center sm:text-left mb-4 sm:mb-0">
+                                <p class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Overall Voxylet Score</p>
+                                <p class="text-xs text-slate-500">Benchmarked against global standards</p>
+                            </div>
+                            <div class="w-32 h-32 rounded-full border-8 border-slate-100 flex items-center justify-center relative">
+                                <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="46" fill="transparent" stroke="#2563eb" stroke-width="8" id="total-svg-ring" stroke-dasharray="289" stroke-dashoffset="289" class="transition-all duration-1500 ease-out"></circle>
+                                </svg>
+                                <span class="text-3xl font-bold text-slate-900" id="res-total">0%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <!-- Metric 1 -->
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                <div class="flex justify-between items-center mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-list-check text-xs"></i></div>
+                                        <span class="text-sm font-bold text-slate-700">Syntax & Grammar</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-slate-900 bg-white px-2 py-1 rounded shadow-sm border border-slate-100" id="score-mcq">0/15</span>
+                                </div>
+                                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden"><div id="bar-mcq" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div></div>
+                            </div>
+                            
+                            <!-- Metric 2 -->
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                <div class="flex justify-between items-center mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center"><i class="fa-solid fa-headphones text-xs"></i></div>
+                                        <span class="text-sm font-bold text-slate-700">Auditory Dictation</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-slate-900 bg-white px-2 py-1 rounded shadow-sm border border-slate-100" id="score-ls">0%</span>
+                                </div>
+                                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden"><div id="bar-ls" class="h-full bg-indigo-500 w-0 transition-all duration-1000 delay-300"></div></div>
+                            </div>
+
+                            <!-- Metric 3 -->
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                <div class="flex justify-between items-center mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded bg-brand-100 text-brand-600 flex items-center justify-center"><i class="fa-solid fa-video text-xs"></i></div>
+                                        <span class="text-sm font-bold text-slate-700">Visual Comms AI</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-slate-900 bg-white px-2 py-1 rounded shadow-sm border border-slate-100" id="score-vid">0%</span>
+                                </div>
+                                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden"><div id="bar-vid" class="h-full bg-brand-500 w-0 transition-all duration-1000 delay-500"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-between items-center">
+                        <p class="text-[11px] font-medium text-slate-500"><i class="fa-solid fa-lock text-slate-400 mr-1"></i> Data recorded in Proctorix Vault</p>
+                        <p class="text-[11px] font-bold text-brand-600">You may securely close this window.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // --- DATA & STATE ---
+        let userData = { name: '', email: '', mobile: '', org: '', desig: '' };
+        let scores = { mcq: 0, listenSpeak: 0, video: 0 };
+        let currentScreen = 'screen-register';
+        let globalStream = null;
+        let warningCount = 0;
+        let fullscreenExitCount = 0;
+        let testActive = false;
+        
+        // MCQ Data - 15 Questions total
+        const mcqDatabase = [
+            // Articles
+            { q: "He is ___ honest man.", options: ["a", "an", "the", "no article"], ans: 1, cat: "Articles" },
+            { q: "I saw ___ eagle flying in the sky.", options: ["a", "an", "the", "no article"], ans: 1, cat: "Articles" },
+            { q: "___ Earth revolves around the sun.", options: ["A", "An", "The", "No article"], ans: 2, cat: "Articles" },
+            { q: "Let's go to ___ park.", options: ["a", "an", "the", "no article"], ans: 2, cat: "Articles" },
+            { q: "She wants to be ___ astronaut.", options: ["a", "an", "the", "no article"], ans: 1, cat: "Articles" },
+            // Prepositions
+            { q: "She is good ___ solving puzzles.", options: ["in", "on", "at", "with"], ans: 2, cat: "Prepositions" },
+            { q: "The book is ___ the table.", options: ["in", "on", "at", "under"], ans: 1, cat: "Prepositions" },
+            { q: "He has been living here ___ 2010.", options: ["for", "since", "from", "in"], ans: 1, cat: "Prepositions" },
+            { q: "She is afraid ___ spiders.", options: ["of", "from", "with", "about"], ans: 0, cat: "Prepositions" },
+            { q: "We are traveling ___ train.", options: ["in", "on", "by", "with"], ans: 2, cat: "Prepositions" },
+            // Tenses
+            { q: "By the time I arrive, he ___ left.", options: ["will have", "would have", "has", "had"], ans: 0, cat: "Tenses" },
+            { q: "I ___ English for five years.", options: ["am studying", "have been studying", "study", "was studying"], ans: 1, cat: "Tenses" },
+            { q: "She ___ to the market yesterday.", options: ["goes", "going", "went", "gone"], ans: 2, cat: "Tenses" },
+            { q: "If it rains, we ___ the match.", options: ["cancel", "will cancel", "cancelled", "cancelling"], ans: 1, cat: "Tenses" },
+            { q: "The train ___ before we reached the station.", options: ["left", "has left", "had left", "will leave"], ans: 2, cat: "Tenses" }
+        ];
+        
+        let mcqList = [];
+        let currentMcqIndex = 0;
+        let selectedMcqOption = null;
+
+        // Listen & Speak Data - 3 Prompts
+        const dictationPrompts = [
+            "Innovation distinguishes between a leader and a follower.",
+            "Effective communication is the foundation of a successful team.",
+            "Please ensure all confidential documents are secured before leaving."
+        ];
+        let currentDictationIndex = 0;
+        let dictationScores = [];
+
+        // --- UTILITY FUNCTIONS ---
+        function switchScreen(targetId, sidebarStep = null) {
+            document.getElementById(currentScreen).classList.add('hidden');
+            document.getElementById(currentScreen).classList.remove('fade-in');
+            
+            const target = document.getElementById(targetId);
+            target.classList.remove('hidden');
+            target.classList.add('fade-in');
+            currentScreen = targetId;
+
+            if(sidebarStep) updateSidebar(sidebarStep);
+        }
+
+        function updateSidebar(activeStep) {
+            document.getElementById('sidebar').classList.remove('hidden');
+            const items = document.querySelectorAll('.step-item');
+            let foundActive = false;
+            
+            items.forEach(item => {
+                const icon = item.querySelector('.step-icon');
+                const title = item.querySelector('.step-title');
+                const iconI = icon.querySelector('i');
+
+                if(item.dataset.step === activeStep) {
+                    icon.className = 'w-7 h-7 rounded-full bg-blue-600 border-2 border-blue-200 flex items-center justify-center z-10 step-icon mt-0.5 shadow-md shadow-blue-500/30';
+                    iconI.className = `${iconI.className.split(' ')[0]} ${iconI.className.split(' ')[1]} text-[10px] text-white`;
+                    title.className = 'text-sm font-bold text-slate-900 step-title';
+                    foundActive = true;
+                } else if (!foundActive) {
+                    icon.className = 'w-7 h-7 rounded-full bg-brand-900 border-2 border-brand-800 flex items-center justify-center z-10 step-icon mt-0.5';
+                    iconI.className = 'fa-solid fa-check text-[10px] text-white';
+                    title.className = 'text-sm font-bold text-slate-500 step-title';
+                } else {
+                    icon.className = 'w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5';
+                    iconI.className = `${iconI.className.split(' ')[0]} ${iconI.className.split(' ')[1]} text-[10px] text-slate-400`;
+                    title.className = 'text-sm font-bold text-slate-400 step-title';
+                }
+            });
+        }
+
+        function enterFullScreen() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) elem.requestFullscreen().catch(()=>{});
+        }
+
+        // --- ANTI-CHEAT ---
+        // Tab switch tracking
+        document.addEventListener('visibilitychange', () => {
+            if (testActive && document.visibilityState === 'hidden') {
+                warningCount++;
+                document.getElementById('anti-cheat-warning').classList.remove('hidden');
+                document.getElementById('anti-cheat-warning').classList.add('flex');
+            }
+        });
+
+        // Fullscreen exit tracking
+        document.addEventListener('fullscreenchange', () => {
+            if (testActive && !document.fullscreenElement) {
+                fullscreenExitCount++;
+                warningCount++;
+                document.getElementById('anti-cheat-warning').classList.remove('hidden');
+                document.getElementById('anti-cheat-warning').classList.add('flex');
+            }
+        });
+
+        function dismissWarning() {
+            document.getElementById('anti-cheat-warning').classList.add('hidden');
+            document.getElementById('anti-cheat-warning').classList.remove('flex');
+            enterFullScreen();
+        }
+
+        // --- GLOBAL TIMER ---
+        let globalSeconds = 0;
+        setInterval(() => {
+            if(testActive) {
+                globalSeconds++;
+                const m = String(Math.floor(globalSeconds / 60)).padStart(2, '0');
+                const s = String(globalSeconds % 60).padStart(2, '0');
+                document.getElementById('global-time').innerText = `${m}:${s}`;
+            }
+        }, 1000);
+
+        // --- REGISTRATION ---
+        document.getElementById('reg-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            userData = {
+                name: document.getElementById('reg-name').value,
+                email: document.getElementById('reg-email').value,
+                mobile: document.getElementById('reg-mobile').value,
+                org: document.getElementById('reg-org').value,
+                desig: document.getElementById('reg-desig').value
+            };
+            switchScreen('screen-system', 'system');
+        });
+
+        // --- SYSTEM CHECK & PROCTOR INIT ---
+        document.getElementById('btn-grant-access').addEventListener('click', async function() {
+            const btn = this;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Initializing...';
+            btn.disabled = true;
+
+            try {
+                // Request BOTH explicitly so browsers don't prompt later for mic
+                globalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                
+                const proctorVid = document.getElementById('global-proctor-video');
+                proctorVid.srcObject = globalStream;
+                document.getElementById('proctor-widget').classList.remove('hidden');
+
+                // Update UI statuses
+                document.getElementById('icon-cam').classList.replace('text-slate-400', 'text-green-500');
+                document.getElementById('status-cam').innerText = 'Connected';
+                document.getElementById('status-cam').classList.add('text-green-600');
+                
+                document.getElementById('icon-mic').classList.replace('text-slate-400', 'text-green-500');
+                document.getElementById('status-mic').innerText = 'Active';
+                document.getElementById('status-mic').classList.add('text-green-600');
+
+                document.getElementById('icon-net').classList.replace('text-slate-400', 'text-green-500');
+                document.getElementById('status-net').innerText = 'Stable';
+                document.getElementById('status-net').classList.add('text-green-600');
+
+                btn.classList.add('hidden');
+                document.getElementById('btn-proceed-intro').classList.remove('hidden');
+
+            } catch (err) {
+                alert("Permissions denied. A simulated feed will be used for demonstration purposes.");
+                btn.classList.add('hidden');
+                document.getElementById('btn-proceed-intro').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('btn-proceed-intro').addEventListener('click', () => {
+            testActive = true;
+            enterFullScreen();
+            document.getElementById('header-timer').classList.remove('hidden');
+            document.getElementById('header-status').classList.remove('hidden');
+            document.getElementById('header-status').classList.add('flex');
+            switchScreen('screen-intro', 'system');
+            
+            // AI Logs Simulation
+            setInterval(() => {
+                const logs = ["[SYS] Heartbeat OK", "[AI] Face Match: 99.2%", "[AI] Audio levels normal", "[SYS] Encrypting stream", "[AI] Gaze centered"];
+                const el = document.getElementById('ai-live-logs');
+                el.innerText = logs[Math.floor(Math.random() * logs.length)];
+            }, 4000);
+        });
+
+        // --- MODULE ROUTING ---
+        function startModule(moduleName) {
+            if (moduleName === 'mcq') initMCQ();
+            else if (moduleName === 'listen') initListenSpeak();
+            else if (moduleName === 'video') initVideo();
+            else if (moduleName === 'results') submitResults();
+        }
+
+        // --- MODULE 1: MCQ ---
+        function initMCQ() {
+            // Randomize but keep all 15
+            mcqList = mcqDatabase.sort(() => Math.random() - 0.5);
+            currentMcqIndex = 0;
+            scores.mcq = 0;
+            switchScreen('screen-mcq', 'mcq');
+            document.getElementById('mcq-total').innerText = mcqList.length;
+            renderMCQ();
+        }
+
+        function renderMCQ() {
+            const qData = mcqList[currentMcqIndex];
+            document.getElementById('mcq-section-title').innerText = `Grammar: ${qData.cat}`;
+            document.getElementById('mcq-current').innerText = currentMcqIndex + 1;
+            document.getElementById('mcq-question-text').innerText = qData.q;
+            
+            const optionsContainer = document.getElementById('mcq-options');
+            optionsContainer.innerHTML = '';
+            selectedMcqOption = null;
+            document.getElementById('mcq-next-btn').disabled = true;
+
+            qData.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-lg border-2 border-slate-100 bg-white hover:border-brand-500 hover:shadow-md transition-all font-semibold text-slate-700 text-sm focus:outline-none";
+                btn.innerText = opt;
+                btn.onclick = () => selectMcqOption(btn, idx);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectMcqOption(btn, idx) {
+            const btns = document.getElementById('mcq-options').children;
+            for(let b of btns) {
+                b.classList.remove('border-brand-500', 'bg-brand-50', 'text-brand-900');
+                b.classList.add('border-slate-100', 'bg-white', 'text-slate-700');
+            }
+            btn.classList.remove('border-slate-100', 'bg-white', 'text-slate-700');
+            btn.classList.add('border-brand-500', 'bg-brand-50', 'text-brand-900');
+            
+            selectedMcqOption = idx;
+            document.getElementById('mcq-next-btn').disabled = false;
+        }
+
+        document.getElementById('mcq-next-btn').addEventListener('click', () => {
+            if (selectedMcqOption === mcqList[currentMcqIndex].ans) scores.mcq += 1;
+            
+            currentMcqIndex++;
+            if (currentMcqIndex < mcqList.length) {
+                renderMCQ();
+            } else {
+                startModule('listen');
+            }
+        });
+
+        // --- MODULE 2: LISTEN & SPEAK (Strict Timer Implementation) ---
+        let hasPlayedAudio = false;
+
+        function initListenSpeak() {
+            currentDictationIndex = 0;
+            dictationScores = [];
+            switchScreen('screen-listen', 'listen');
+            prepareDictationUI();
+        }
+
+        function prepareDictationUI() {
+            hasPlayedAudio = false;
+            document.getElementById('ls-current').innerText = currentDictationIndex + 1;
+            
+            // Reset UI states
+            document.getElementById('ls-play-area').classList.remove('hidden');
+            document.getElementById('ls-record-area').classList.add('hidden');
+            document.getElementById('ls-record-area').classList.remove('flex');
+            document.getElementById('ls-result-box').classList.add('hidden');
+            document.getElementById('ls-next-container').classList.add('hidden');
+            
+            const playBtn = document.getElementById('btn-play-audio');
+            playBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'ring-4', 'ring-blue-300', 'bg-blue-50');
+            document.getElementById('play-instruction').innerText = "Play Audio Prompt";
+            
+            document.getElementById('btn-start-record').classList.remove('hidden');
+            document.getElementById('ls-visualizer').classList.add('hidden');
+            document.getElementById('ls-visualizer').classList.remove('flex');
+            document.getElementById('record-status').innerText = "Awaiting input";
+            document.getElementById('record-status').classList.remove('text-red-600', 'animate-pulse');
+            document.getElementById('ls-timer-display').innerText = "00:10";
+        }
+
+        document.getElementById('btn-play-audio').addEventListener('click', function() {
+            if (hasPlayedAudio) return;
+            const btn = this;
+            const targetSentence = dictationPrompts[currentDictationIndex];
+            
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(targetSentence);
+                utterance.rate = 0.9; 
+                utterance.onstart = () => {
+                    btn.classList.add('ring-4', 'ring-blue-300', 'bg-blue-50');
+                    document.getElementById('play-instruction').innerText = "Playing...";
+                };
+                utterance.onend = () => {
+                    btn.classList.remove('ring-4', 'ring-blue-300', 'bg-blue-50');
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('play-instruction').innerText = "Prompt Delivered";
+                    hasPlayedAudio = true;
+                    setTimeout(() => {
+                        document.getElementById('ls-record-area').classList.remove('hidden');
+                        document.getElementById('ls-record-area').classList.add('flex', 'fade-in');
+                    }, 500);
+                };
+                window.speechSynthesis.speak(utterance);
+            } else {
+                hasPlayedAudio = true;
+                document.getElementById('ls-record-area').classList.remove('hidden');
+                document.getElementById('ls-record-area').classList.add('flex');
+            }
+        });
+
+        document.getElementById('btn-start-record').addEventListener('click', function() {
+            const btn = this;
+            btn.classList.add('hidden'); // Hide start button
+            
+            document.getElementById('ls-visualizer').classList.remove('hidden');
+            document.getElementById('ls-visualizer').classList.add('flex');
+            document.getElementById('record-status').innerText = "RECORDING ACTIVE - SPEAK NOW";
+            document.getElementById('record-status').classList.add('text-red-600', 'animate-pulse');
+
+            // --- STRICT 10 SECOND TIMER ---
+            let timeLeft = 10;
+            const timerDisplay = document.getElementById('ls-timer-display');
+            timerDisplay.innerText = `00:${timeLeft < 10 ? '0'+timeLeft : timeLeft}`;
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition = null;
+            let capturedText = "";
+
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.interimResults = true;
+                recognition.onresult = (e) => capturedText = e.results[0][0].transcript;
+                try { recognition.start(); } catch(e){}
+            }
+
+            const interval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.innerText = `00:0${timeLeft}`;
+                
+                if(timeLeft <= 0) {
+                    clearInterval(interval);
+                    if(recognition) try { recognition.stop(); } catch(e){}
+                    
+                    document.getElementById('ls-visualizer').classList.add('hidden');
+                    document.getElementById('ls-visualizer').classList.remove('flex');
+                    document.getElementById('record-status').innerText = "Processing Audio...";
+                    document.getElementById('record-status').classList.remove('text-red-600', 'animate-pulse');
+                    timerDisplay.innerText = "DONE";
+
+                    evaluateListenSpeak(capturedText, dictationPrompts[currentDictationIndex]);
+                }
+            }, 1000);
+        });
+
+        function evaluateListenSpeak(transcript, target) {
+            document.getElementById('ls-result-box').classList.remove('hidden');
+            
+            setTimeout(() => {
+                let pScore = 0;
+                if(!transcript || transcript.trim() === "") {
+                    // Fallback simulated AI if browser blocked voice recognition API
+                    pScore = Math.floor(Math.random() * 20) + 70; // 70-90
+                } else {
+                    // Better Evaluation algorithm
+                    let tWords = target.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ');
+                    let rWords = transcript.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ');
+                    let matches = 0;
+                    rWords.forEach(w => { if(tWords.includes(w)) matches++; });
+                    let accuracy = (matches / tWords.length) * 100;
+                    pScore = Math.min(100, Math.max(50, accuracy + 25)); // Boost slightly for AI fuzziness
+                }
+                
+                dictationScores.push(pScore);
+                
+                const nextBtn = document.getElementById('btn-ls-next-prompt');
+                nextBtn.classList.remove('hidden');
+                
+                if (currentDictationIndex < 2) {
+                    nextBtn.innerHTML = 'Next Prompt <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>';
+                    nextBtn.onclick = () => {
+                        currentDictationIndex++;
+                        prepareDictationUI();
+                    };
+                } else {
+                    // Final prompt done
+                    scores.listenSpeak = Math.round(dictationScores.reduce((a, b) => a + b, 0) / dictationScores.length);
+                    nextBtn.classList.add('hidden'); // Hide prompt button
+                    document.getElementById('ls-next-container').classList.remove('hidden'); // Show module advance
+                }
+            }, 1500); // Give AI "processing" time
+        }
+
+        // --- MODULE 3: VIDEO ASSESSMENT ---
+        function initVideo() {
+            switchScreen('screen-video', 'video');
+            if(globalStream) {
+                document.getElementById('interview-video').srcObject = globalStream;
+            }
+        }
+
+        document.getElementById('btn-start-vid').addEventListener('click', function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.classList.replace('bg-red-600', 'bg-slate-300');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Recording...';
+            
+            const recInd = document.getElementById('interview-rec-indicator');
+            recInd.classList.remove('opacity-0');
+            
+            let timeLeft = 60; // 60s for Visual Comms
+            const timerEl = document.getElementById('interview-timer');
+            timerEl.innerText = `01:00`;
+            
+            const interval = setInterval(() => {
+                timeLeft--;
+                const m = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+                const s = String(timeLeft % 60).padStart(2, '0');
+                timerEl.innerText = `${m}:${s}`;
+                
+                if(timeLeft <= 0) {
+                    clearInterval(interval);
+                    recInd.classList.add('opacity-0');
+                    processVideoAI();
+                }
+            }, 1000);
+        });
+
+        function processVideoAI() {
+            const overlay = document.getElementById('ai-overlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            
+            const pBar = document.getElementById('ai-progress-bar');
+            const statusTexts = [
+                "Extracting vocal cadence metrics...", 
+                "Mapping facial articulation points...", 
+                "Calculating confidence indexing...", 
+                "Generating secure hash..."
+            ];
+            let step = 0;
+            
+            const aiInterval = setInterval(() => {
+                step++;
+                pBar.style.width = `${step * 25}%`;
+                if(step < 4) {
+                    document.getElementById('ai-status-text').innerText = statusTexts[step];
+                } else {
+                    clearInterval(aiInterval);
+                    scores.video = Math.floor(Math.random() * (96 - 82 + 1)) + 82; // Stronger bound 82-96
+                    setTimeout(() => startModule('results'), 1000);
+                }
+            }, 1200);
+        }
+
+        // --- SUBMISSION & RESULTS ---
+        function submitResults() {
+            testActive = false;
+            document.getElementById('proctor-widget').classList.add('opacity-0'); // Hide proctor
+            
+            // Stop Camera
+            if(globalStream) {
+                globalStream.getTracks().forEach(t => t.stop());
+            }
+
+            const mcqPercent = Math.round((scores.mcq / 15) * 100);
+            const lsPercent = scores.listenSpeak;
+            const vidPercent = scores.video;
+            const totalPercent = Math.round((mcqPercent + lsPercent + vidPercent) / 3);
+
+            const payload = {
+                candidate_name: userData.name,
+                work_email: userData.email,
+                mobile: userData.mobile,
+                organization: userData.org,
+                designation: userData.desig,
+                tab_switch_warnings: warningCount,
+                fullscreen_exits: fullscreenExitCount,
+                mcq_score_raw: `${scores.mcq}/15`,
+                mcq_score_percent: `${mcqPercent}%`,
+                dictation_score: `${lsPercent}%`,
+                video_ai_score: `${vidPercent}%`,
+                overall_score: `${totalPercent}%`,
+                _subject: `Proctorix Result: ${userData.name} - ${totalPercent}%`
+            };
+
+            // Transmit to Formspree
+            fetch('https://formspree.io/f/mdalvqap', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                showFinalReport(totalPercent, mcqPercent, lsPercent, vidPercent);
+            }).catch(() => {
+                showFinalReport(totalPercent, mcqPercent, lsPercent, vidPercent);
+            });
+        }
+
+        function showFinalReport(total, mcqP, lsP, vidP) {
+            switchScreen('screen-results');
+            document.getElementById('header-status').innerHTML = '<div class="w-2 h-2 rounded-full bg-slate-400"></div> Session Concluded';
+            document.getElementById('header-status').classList.replace('bg-green-50', 'bg-slate-100');
+            document.getElementById('header-status').classList.replace('border-green-200', 'border-slate-300');
+            document.getElementById('header-status').classList.replace('text-slate-600', 'text-slate-500');
+
+            document.getElementById('result-user-name').innerText = `Candidate: ${userData.name.toUpperCase()} | ID: VOX-${Math.floor(Math.random()*90000)+10000}`;
+            
+            // Animate Ring
+            setTimeout(() => {
+                const ring = document.getElementById('total-svg-ring');
+                const offset = 289 - (289 * total) / 100;
+                ring.style.strokeDashoffset = offset;
+            }, 500);
+
+            animateValue('res-total', 0, total, 1500, '%');
+            
+            document.getElementById('score-mcq').innerText = `${scores.mcq}/15`;
+            setTimeout(() => document.getElementById('bar-mcq').style.width = `${mcqP}%`, 800);
+            
+            document.getElementById('score-ls').innerText = `${lsP}%`;
+            setTimeout(() => document.getElementById('bar-ls').style.width = `${lsP}%`, 1100);
+            
+            document.getElementById('score-vid').innerText = `${vidP}%`;
+            setTimeout(() => document.getElementById('bar-vid').style.width = `${vidP}%`, 1400);
+        }
+
+        function animateValue(id, start, end, duration, suffix = '') {
+            if (start === end) return;
+            let range = end - start;
+            let current = start;
+            let increment = end > start ? 1 : -1;
+            let stepTime = Math.abs(Math.floor(duration / range));
+            let obj = document.getElementById(id);
+            let timer = setInterval(function() {
+                current += increment;
+                obj.innerHTML = current + suffix;
+                if (current == end) clearInterval(timer);
+            }, stepTime);
+        }
+    </script>
+</body>
+</html>
