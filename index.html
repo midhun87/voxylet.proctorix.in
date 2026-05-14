@@ -1,1000 +1,936 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voxylet Enterprise | Secure Assessment</title>
+    <title>VOXYLET | Enterprise Communication Testing</title>
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
                     colors: {
-                        brand: { 50: '#f8fafc', 100: '#f1f5f9', 500: '#2563eb', 800: '#1e293b', 900: '#0f172a' }
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb', // Primary brand blue
+                            900: '#1e3a8a',
+                            950: '#0f172a', // Deep slate for high-contrast text
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                        'card': '0 10px 40px -10px rgba(0,0,0,0.08)',
+                        'floating': '0 20px 40px -15px rgba(37, 99, 235, 0.15)',
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'spin-slow': 'spin 20s linear infinite',
+                        'pulse-soft': 'pulseSoft 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.7' }
+                        }
                     }
                 }
             }
         }
     </script>
-    <style>
-        body { background-color: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
-        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .pulse-ring { animation: pulseRing 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
-        @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        
-        .ai-scan-line {
-            position: absolute; width: 100%; height: 2px; background: rgba(34, 197, 94, 0.8);
-            box-shadow: 0 0 8px rgba(34, 197, 94, 0.8); animation: scan 3s linear infinite; z-index: 20;
-        }
-        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    <style>
+        body {
+            background-color: #f8fafc; /* Very light slate background */
+            color: #334155; /* Slate 700 for highly readable text */
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Stop scrolling while intro is active */
+        body.intro-active {
+            overflow: hidden;
+        }
+
+        #intro-sequence {
+            position: fixed;
+            inset: 0;
+            background-color: #ffffff;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #intro-sequence.hide {
+            opacity: 0;
+            transform: scale(1.02);
+            pointer-events: none;
+        }
+
+        .intro-logo {
+            max-width: 320px;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: introReveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.3s;
+        }
+
+        .intro-subtitle {
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0;
+            animation: introReveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.9s;
+        }
+
+        .intro-loader {
+            width: 200px;
+            height: 3px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            margin-top: 2.5rem;
+            overflow: hidden;
+            opacity: 0;
+            animation: introReveal 0.5s forwards;
+            animation-delay: 1.2s;
+            position: relative;
+        }
+
+        .intro-loader-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            animation: loadBar 2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+            animation-delay: 1.2s;
+        }
+
+        @keyframes introReveal {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes loadBar {
+            to { width: 100%; }
+        }
+
+        .mesh-bg {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            background-color: #f8fafc;
+            opacity: 0.6;
+        }
         
-        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .mesh-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: pulseSoft 8s infinite alternate;
+        }
+
+        .blob-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #dbeafe; }
+        .blob-2 { top: 40%; right: -10%; width: 600px; height: 600px; background: #e0e7ff; animation-delay: 2s; }
+        .blob-3 { bottom: -20%; left: 20%; width: 700px; height: 700px; background: #f3e8ff; animation-delay: 4s; }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .card-premium {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
+        }
+        .card-premium:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transform: translateY(-4px);
+            border-color: #cbd5e1;
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
         
-        /* Fullscreen styles */
-        :fullscreen { background-color: #f1f5f9; overflow-y: auto; }
-        :-webkit-full-screen { background-color: #f1f5f9; overflow-y: auto; }
+        .text-gradient-blue {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .orbit-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 1/1;
+            margin: 0 auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #ffffff 0%, #f8fafc 100%);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.02);
+            border: 1px solid #e2e8f0;
+        }
+
+        .orbit-ring-1 {
+            position: absolute; inset: 15%;
+            border: 1px solid #e2e8f0;
+            border-radius: 50%;
+        }
+        .orbit-ring-2 {
+            position: absolute; inset: 30%;
+            border: 1px dashed #cbd5e1;
+            border-radius: 50%;
+            animation: spin-slow 40s linear infinite reverse;
+        }
+
+        .orbit-core {
+            position: relative;
+            width: 100px; height: 100px;
+            background: #ffffff;
+            border: 2px solid #2563eb;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+            z-index: 10;
+        }
+
+        .orbit-node {
+            position: absolute;
+            width: 64px; height: 64px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #64748b;
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 20;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .orbit-node:hover, .orbit-node.active {
+            border-color: #2563eb;
+            color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+            transform: scale(1.15);
+        }
+
+        .node-label {
+            position: absolute;
+            top: 120%;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            color: #475569;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            transform: translateY(-5px);
+        }
+        .orbit-node:hover .node-label, .orbit-node.active .node-label {
+            opacity: 1;
+            transform: translateY(0);
+            color: #0f172a;
+        }
+
+        .overlay-bg {
+            opacity: 0; visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.4);
+        }
+        .overlay-bg.active { opacity: 1; visibility: visible; }
+        
+        .side-drawer {
+            transform: translateX(100%);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            background: #ffffff;
+            box-shadow: -20px 0 40px rgba(0,0,0,0.1);
+        }
+        .side-drawer.active { transform: translateX(0); }
+
+        .full-screen-modal {
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .overlay-bg.active .full-screen-modal {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Scroll Reveal Utility */
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* Timeline Flow Line */
+        .flow-line {
+            position: absolute;
+            left: 2rem;
+            top: 2rem;
+            bottom: 2rem;
+            width: 2px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+        @media (min-width: 768px) {
+            .flow-line { left: 50%; transform: translateX(-50%); }
+        }
     </style>
 </head>
-<body class="text-slate-800 antialiased">
+<body class="relative intro-active">
 
-    <!-- ANTI-CHEAT OVERLAY -->
-    <div id="anti-cheat-warning" class="fixed inset-0 bg-slate-900/90 z-[9999] hidden flex-col items-center justify-center text-white p-6">
-        <i class="fa-solid fa-triangle-exclamation text-6xl text-yellow-500 mb-6"></i>
-        <h1 class="text-3xl font-bold mb-2">Proctoring Alert</h1>
-        <p class="text-lg text-slate-300 mb-6 text-center max-w-md">Tab switching, exiting full-screen, or leaving the assessment window is strictly prohibited. This incident has been logged.</p>
-        <button onclick="dismissWarning()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded font-semibold transition-colors">Acknowledge & Return to Assessment</button>
-    </div>
-
-    <!-- GLOBAL PROCTOR WIDGET -->
-    <div id="proctor-widget" class="fixed bottom-6 right-6 bg-slate-900 rounded-lg shadow-2xl border border-slate-700 p-2 hidden z-50 w-48 transition-all duration-300">
-        <div class="relative w-full aspect-video bg-black rounded overflow-hidden">
-            <video id="global-proctor-video" autoplay muted playsinline class="w-full h-full object-cover transform scale-x-[-1]"></video>
-            <div class="ai-scan-line"></div>
-            <div class="absolute top-1.5 right-1.5 flex items-center gap-1.5 bg-red-600/90 backdrop-blur px-2 py-0.5 rounded text-[9px] text-white font-bold tracking-widest">
-                <div class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div> REC
-            </div>
-            <!-- Dynamic AI Logs -->
-            <div id="ai-live-logs" class="absolute bottom-1 left-1.5 text-[8px] font-mono text-green-400 font-medium z-30 drop-shadow-md">
-                [SYS] Initializing...
-            </div>
-        </div>
-        <div class="text-[10px] text-center text-slate-300 mt-2 flex justify-center items-center gap-1.5 font-medium">
-            <i class="fa-solid fa-shield-halved text-blue-500"></i> AI Proctor Active
-        </div>
-    </div>
-
-    <!-- TOP HEADER -->
-    <header class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm z-40 sticky top-0">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-brand-900 flex items-center justify-center text-white font-bold text-lg rounded shadow-sm">
-                <i class="fa-solid fa-microphone-lines"></i>
-            </div>
-            <div>
-                <h1 class="font-bold text-lg tracking-tight text-slate-900 leading-none mb-1">Voxylet <span class="text-slate-400 font-normal">Enterprise</span></h1>
-                <p class="text-[10px] text-slate-500 font-semibold tracking-widest uppercase">Powered by Proctorix</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-4">
-            <div id="header-timer" class="text-sm font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded border border-slate-200 hidden">
-                <i class="fa-regular fa-clock mr-1 text-slate-500"></i> <span id="global-time">00:00</span>
-            </div>
-            <div id="header-status" class="text-xs font-semibold text-slate-600 bg-green-50 border border-green-200 px-3 py-1.5 rounded hidden items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Secure
-            </div>
-        </div>
-    </header>
-
-    <div class="flex flex-grow overflow-hidden">
+    <div id="intro-sequence">
+        <img src="https://res.cloudinary.com/dzuxwvamy/image/upload/v1778758095/Voxylet-header_yxwif7.png" alt="VOXYLET" class="intro-logo drop-shadow-xl">
         
-        <!-- SIDEBAR (Test Progress) -->
-        <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col p-6 z-30">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Assessment Progress</h3>
-            <ul class="space-y-6 relative" id="progress-steps">
-                <!-- Vertical Line -->
-                <div class="absolute left-3.5 top-2 bottom-2 w-0.5 bg-slate-100 -z-10"></div>
-                
-                <li class="flex items-start gap-3 step-item" data-step="system">
-                    <div class="w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5"><i class="fa-solid fa-desktop text-[10px] text-slate-400"></i></div>
-                    <div><p class="text-sm font-bold text-slate-500 step-title">System Check</p><p class="text-[10px] text-slate-400">Hardware & Env</p></div>
-                </li>
-                <li class="flex items-start gap-3 step-item" data-step="mcq">
-                    <div class="w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5"><i class="fa-solid fa-list-check text-[10px] text-slate-400"></i></div>
-                    <div><p class="text-sm font-bold text-slate-500 step-title">Syntax & Grammar</p><p class="text-[10px] text-slate-400">15 Questions</p></div>
-                </li>
-                <li class="flex items-start gap-3 step-item" data-step="listen">
-                    <div class="w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5"><i class="fa-solid fa-headphones text-[10px] text-slate-400"></i></div>
-                    <div><p class="text-sm font-bold text-slate-500 step-title">Auditory Dictation</p><p class="text-[10px] text-slate-400">3 Prompts</p></div>
-                </li>
-                <li class="flex items-start gap-3 step-item" data-step="video">
-                    <div class="w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5"><i class="fa-solid fa-video text-[10px] text-slate-400"></i></div>
-                    <div><p class="text-sm font-bold text-slate-500 step-title">Visual Comms</p><p class="text-[10px] text-slate-400">AI Video Analysis</p></div>
-                </li>
-            </ul>
-        </aside>
+        <div class="intro-loader">
+            <div class="intro-loader-bar" id="loader-bar"></div>
+        </div>
 
-        <!-- MAIN CONTENT AREA -->
-        <main class="flex-grow overflow-y-auto p-4 sm:p-8 flex items-center justify-center pb-24">
+        <div class="intro-subtitle">
+            <span class="text-sm text-slate-500 font-medium tracking-wide">A Product Of Xeta Tech Solutions</span>
+            <img src="https://res.cloudinary.com/dpz44zf0z/image/upload/v1760704788/XETA_SOLUTIONS_LOGO_bcsbwh.png" alt="Xeta Tech Solutions" class="h-6 object-contain mix-blend-multiply opacity-80">
+        </div>
+    </div>
+
+    <div id="main-app">
+        
+        <!-- Abstract Mesh Background -->
+        <div class="mesh-bg">
+            <div class="mesh-blob blob-1"></div>
+            <div class="mesh-blob blob-2"></div>
+            <div class="mesh-blob blob-3"></div>
+        </div>
+
+        <nav class="fixed w-full z-40 glass-nav transition-all duration-300" id="navbar">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center cursor-pointer" onclick="window.scrollTo(0,0)">
+                        <img src="https://res.cloudinary.com/dzuxwvamy/image/upload/v1778758095/Voxylet-header_yxwif7.png" alt="VOXYLET" class="h-8 md:h-10 object-contain">
+                    </div>
+                    
+                    <!-- Desktop Nav -->
+                    <div class="hidden md:flex items-center space-x-8">
+                        <button onclick="openModal('about-modal')" class="text-sm font-medium text-slate-600 hover:text-brand-600 transition-colors">Platform Overview</button>
+                        <a href="#ecosystem" class="text-sm font-medium text-slate-600 hover:text-brand-600 transition-colors">Architecture</a>
+                        <a href="#roles" class="text-sm font-medium text-slate-600 hover:text-brand-600 transition-colors">Access Control</a>
+                        <a href="#modules" class="text-sm font-medium text-slate-600 hover:text-brand-600 transition-colors">Test Modules</a>
+                        
+                        <div class="h-6 w-px bg-slate-300"></div>
+                        
+                        <button onclick="document.getElementById('waitlist').scrollIntoView()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-md shadow-blue-500/20">
+                            Request Access
+                        </button>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <div class="md:hidden flex items-center">
+                        <button id="mobile-menu-btn" class="text-slate-600 hover:text-brand-600 p-2">
+                            <i class="fa-solid fa-bars text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
             
-            <!-- SCREEN 1: Registration -->
-            <section id="screen-register" class="w-full max-w-2xl mx-auto glass-panel border border-slate-200 shadow-sm p-8 rounded-xl fade-in">
-                <div class="text-center mb-8">
-                    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-blue-100 shadow-sm">
-                        <i class="fa-solid fa-passport"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-slate-900 mb-2">Candidate Registration</h2>
-                    <p class="text-sm text-slate-500">Enter details to generate your secure assessment session token.</p>
-                </div>
-                
-                <form id="reg-form" class="space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name</label>
-                            <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="Jane Doe">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Work Email ID</label>
-                            <input type="email" id="reg-email" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="jane@company.com">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Mobile Number</label>
-                            <input type="tel" id="reg-mobile" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="+1 234 567 8900">
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Organization / College</label>
-                            <input type="text" id="reg-org" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="Tech University">
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Designation / Position</label>
-                            <input type="text" id="reg-desig" required class="w-full px-4 py-3 bg-slate-50 rounded-lg border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-600 outline-none transition text-sm font-medium" placeholder="Software Engineer">
-                        </div>
+            <!-- Mobile Menu Dropdown -->
+            <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200 px-4 py-4 space-y-4 shadow-xl">
+                 <button onclick="openModal('about-modal'); document.getElementById('mobile-menu').classList.add('hidden');" class="block w-full text-left text-sm font-medium text-slate-700 hover:text-brand-600">Platform Overview</button>
+                 <a href="#ecosystem" onclick="document.getElementById('mobile-menu').classList.add('hidden');" class="block text-sm font-medium text-slate-700 hover:text-brand-600">Architecture</a>
+                 <a href="#roles" onclick="document.getElementById('mobile-menu').classList.add('hidden');" class="block text-sm font-medium text-slate-700 hover:text-brand-600">Access Control</a>
+                 <a href="#modules" onclick="document.getElementById('mobile-menu').classList.add('hidden');" class="block text-sm font-medium text-slate-700 hover:text-brand-600">Test Modules</a>
+            </div>
+        </nav>
+
+        <main>
+            <section class="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden flex flex-col items-center justify-center min-h-[90vh]">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center">
+                    
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm mb-8 reveal">
+                        <span class="relative flex h-3 w-3">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                        </span>
+                        <span class="text-xs font-semibold tracking-wide uppercase text-slate-600">Enterprise Multi-Tenant SaaS</span>
                     </div>
                     
-                    <div class="pt-6">
-                        <button type="submit" class="w-full bg-brand-900 hover:bg-slate-800 text-white font-semibold py-3.5 px-6 rounded-lg shadow-lg transition-colors flex justify-center items-center gap-2">
-                            Initialize Secure Environment <i class="fa-solid fa-lock text-sm"></i>
+                    <h1 class="font-display text-5xl md:text-7xl lg:text-[5.5rem] font-bold tracking-tight text-brand-950 leading-[1.1] mb-8 max-w-5xl mx-auto reveal" style="transition-delay: 100ms;">
+                        The Global Standard For <br class="hidden md:block"/>
+                        <span class="text-gradient-blue">Communication Evaluation</span>
+                    </h1>
+                    
+                    <p class="text-lg md:text-xl text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed reveal" style="transition-delay: 200ms;">
+                        A fully managed, infinitely scalable B2B infrastructure. Powered by <strong class="text-slate-900 font-semibold">Wav2Vec2</strong>, <strong class="text-slate-900 font-semibold">BiLSTM</strong>, and <strong class="text-slate-900 font-semibold">AWS Bedrock</strong> to analyze audio trajectories and generate deep linguistic insights automatically.
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center reveal" style="transition-delay: 300ms;">
+                        <button onclick="document.getElementById('waitlist').scrollIntoView()" class="bg-brand-950 text-white hover:bg-slate-800 px-8 py-4 rounded-xl font-semibold transition-all shadow-lg w-full sm:w-auto text-center">
+                            Request Deployment <i class="fa-solid fa-arrow-right ml-2 text-sm"></i>
                         </button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- SCREEN 2: System Check -->
-            <section id="screen-system" class="w-full max-w-2xl mx-auto hidden fade-in">
-                <div class="glass-panel border border-slate-200 shadow-sm p-8 rounded-xl text-center">
-                    <h2 class="text-2xl font-bold text-slate-900 mb-2">System Diagnostic</h2>
-                    <p class="text-sm text-slate-500 mb-8">Voxylet requires Camera and Microphone access to enable AI proctoring and voice dictation. Please allow both.</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg flex flex-col items-center">
-                            <i class="fa-solid fa-camera text-2xl text-slate-400 mb-2" id="icon-cam"></i>
-                            <span class="text-sm font-bold text-slate-700">Webcam</span>
-                            <span class="text-[10px] text-slate-400 uppercase mt-1" id="status-cam">Pending</span>
-                        </div>
-                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg flex flex-col items-center">
-                            <i class="fa-solid fa-microphone text-2xl text-slate-400 mb-2" id="icon-mic"></i>
-                            <span class="text-sm font-bold text-slate-700">Microphone</span>
-                            <span class="text-[10px] text-slate-400 uppercase mt-1" id="status-mic">Pending</span>
-                        </div>
-                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg flex flex-col items-center">
-                            <i class="fa-solid fa-globe text-2xl text-slate-400 mb-2" id="icon-net"></i>
-                            <span class="text-sm font-bold text-slate-700">Connection</span>
-                            <span class="text-[10px] text-slate-400 uppercase mt-1" id="status-net">Pending</span>
-                        </div>
-                    </div>
-
-                    <button id="btn-grant-access" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow transition-colors">
-                        Grant Permissions & Run Diagnostics
-                    </button>
-                    <button id="btn-proceed-intro" class="bg-brand-900 hover:bg-slate-800 text-white font-semibold py-3 px-8 rounded-lg shadow transition-colors hidden mx-auto">
-                        Proceed to Instructions <i class="fa-solid fa-arrow-right ml-2"></i>
-                    </button>
-                </div>
-            </section>
-
-            <!-- SCREEN 3: Instructions -->
-            <section id="screen-intro" class="w-full max-w-3xl mx-auto hidden fade-in">
-                <div class="glass-panel border border-slate-200 shadow-sm p-8 rounded-xl">
-                    <div class="mb-8 border-b border-slate-100 pb-6">
-                        <h2 class="text-2xl font-bold text-slate-900 mb-2">Assessment Protocol</h2>
-                        <p class="text-sm text-slate-500">Please review the rules. You are now being proctored.</p>
-                    </div>
-                    
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-8 flex gap-4">
-                        <i class="fa-solid fa-circle-info text-blue-600 mt-0.5 text-lg"></i>
-                        <div>
-                            <h4 class="font-bold text-blue-900 text-sm mb-1">Strict Anti-Cheat Enabled</h4>
-                            <p class="text-xs text-blue-800 leading-relaxed">Navigating away from this tab, opening other applications, exiting full-screen mode, or having multiple people in the camera frame will be recorded and may invalidate your score.</p>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end pt-4">
-                        <button onclick="startModule('mcq')" class="bg-brand-900 hover:bg-brand-800 text-white font-bold py-3 px-8 rounded-lg shadow transition-colors">
-                            Start Assessment
-                        </button>
+                        <a href="#ecosystem" class="px-8 py-4 rounded-xl font-semibold text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all bg-white w-full sm:w-auto text-center shadow-sm">
+                            Explore Architecture
+                        </a>
                     </div>
                 </div>
             </section>
 
-            <!-- SCREEN 4: MCQs -->
-            <section id="screen-mcq" class="w-full max-w-3xl mx-auto hidden fade-in flex-col">
-                <div class="glass-panel border border-slate-200 shadow-sm p-8 rounded-xl flex flex-col">
-                    <div class="flex justify-between items-end border-b border-slate-100 pb-4 mb-8">
-                        <div>
-                            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1" id="mcq-section-title">Grammar</p>
-                            <h2 class="text-xl font-bold text-slate-900">Syntax Evaluation</h2>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-bold text-slate-400">Question <span class="text-slate-900 text-xl mx-1" id="mcq-current">1</span> / <span id="mcq-total">15</span></div>
-                        </div>
-                    </div>
+            <section id="ecosystem" class="py-24 relative bg-white border-y border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     
-                    <div class="mb-8">
-                        <h3 id="mcq-question-text" class="text-lg font-semibold text-slate-800 mb-6 leading-relaxed"></h3>
-                        <div id="mcq-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <!-- Options -->
-                        </div>
+                    <div class="text-center mb-20 reveal">
+                        <h2 class="text-brand-600 font-semibold tracking-wide uppercase text-sm mb-3">Platform Infrastructure</h2>
+                        <h3 class="text-4xl md:text-5xl font-display font-bold text-brand-950 mb-4">Ecosystem Architecture</h3>
+                        <p class="text-slate-600 max-w-2xl mx-auto text-lg">Interact with the nodes below to explore the core components powering the VOXYLET evaluation engine.</p>
                     </div>
 
-                    <div class="flex justify-between items-center border-t border-slate-100 pt-6">
-                        <span class="text-xs font-semibold text-slate-400"><i class="fa-solid fa-lock mr-1"></i> Formative Evaluation</span>
-                        <button id="mcq-next-btn" disabled class="bg-brand-900 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-lg transition-colors">
-                            Next Question <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SCREEN 5: Listen & Speak -->
-            <section id="screen-listen" class="w-full max-w-3xl mx-auto hidden fade-in">
-                <div class="glass-panel border border-slate-200 shadow-sm p-8 rounded-xl text-center">
-                    <div class="mb-8 border-b border-slate-100 pb-6 flex justify-between items-end">
-                        <div class="text-left">
-                            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Module 2</p>
-                            <h2 class="text-2xl font-bold text-slate-900 mb-1">Auditory Dictation</h2>
-                            <p class="text-sm text-slate-500 max-w-lg">Listen to the phrase. You have exactly 10 seconds to dictate it back.</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-bold text-slate-400">Prompt <span class="text-slate-900 text-xl mx-1" id="ls-current">1</span> / 3</div>
-                        </div>
-                    </div>
-
-                    <div class="min-h-[280px] flex flex-col justify-center items-center bg-slate-50 rounded-xl border border-slate-200 p-8 relative">
+                    <div class="grid lg:grid-cols-12 gap-12 items-center">
                         
-                        <!-- Play State -->
-                        <div id="ls-play-area" class="flex flex-col items-center w-full">
-                            <button id="btn-play-audio" class="w-20 h-20 rounded-full bg-white border-2 border-slate-200 shadow-sm text-slate-700 text-2xl flex items-center justify-center hover:border-blue-500 hover:text-blue-600 transition-all focus:outline-none focus:ring-4 focus:ring-blue-100">
-                                <i class="fa-solid fa-volume-high"></i>
-                            </button>
-                            <p id="play-instruction" class="mt-4 text-sm font-bold text-slate-600 uppercase tracking-wide">Play Audio Prompt</p>
-                        </div>
-
-                        <!-- Record State -->
-                        <div id="ls-record-area" class="hidden flex-col items-center w-full max-w-md mt-6">
-                            
-                            <!-- Visualization/Timer Area -->
-                            <div class="relative w-full h-32 flex flex-col items-center justify-center bg-white border border-slate-200 rounded-lg mb-6 shadow-inner">
-                                <div id="ls-timer-display" class="text-4xl font-mono font-bold text-slate-800 z-10">00:10</div>
-                                <div id="ls-visualizer" class="absolute inset-0 hidden items-center justify-center gap-1 opacity-50">
-                                    <div class="w-2 h-8 bg-red-500 rounded animate-bounce" style="animation-delay: 0.1s"></div>
-                                    <div class="w-2 h-12 bg-red-500 rounded animate-bounce" style="animation-delay: 0.2s"></div>
-                                    <div class="w-2 h-6 bg-red-500 rounded animate-bounce" style="animation-delay: 0.3s"></div>
-                                    <div class="w-2 h-16 bg-red-500 rounded animate-bounce" style="animation-delay: 0.4s"></div>
-                                    <div class="w-2 h-10 bg-red-500 rounded animate-bounce" style="animation-delay: 0.5s"></div>
+                        <!-- Left: Circular UI (5 cols) -->
+                        <div class="lg:col-span-5 reveal relative">
+                            <div class="orbit-wrapper" id="tech-dial">
+                                <div class="orbit-ring-1"></div>
+                                <div class="orbit-ring-2"></div>
+                                
+                                <!-- Core -->
+                                <div class="orbit-core">
+                                    <img src="https://res.cloudinary.com/dzuxwvamy/image/upload/v1778758095/Voxylet-header_yxwif7.png" alt="V" class="h-6 object-contain">
                                 </div>
-                            </div>
-
-                            <button id="btn-start-record" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold py-3 px-8 rounded-full shadow-sm transition-all flex items-center gap-2">
-                                <i class="fa-solid fa-microphone"></i> Start Recording
-                            </button>
-                            <p id="record-status" class="text-xs font-semibold text-slate-500 mt-4 uppercase tracking-wider">Awaiting input</p>
-                        </div>
-
-                        <!-- Result Overlay -->
-                        <div id="ls-result-box" class="absolute inset-0 bg-white/95 backdrop-blur flex flex-col items-center justify-center p-6 rounded-xl hidden z-20">
-                            <i class="fa-solid fa-microchip text-4xl text-blue-500 mb-4 animate-pulse"></i>
-                            <h3 class="text-lg font-bold text-slate-800 mb-1">AI Analyzing Cadence</h3>
-                            <p class="text-sm text-slate-500 mb-6">Processing phonetic matches...</p>
-                            <button id="btn-ls-next-prompt" class="bg-brand-900 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-lg shadow transition-colors hidden">
-                                Next Prompt <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end pt-6 hidden" id="ls-next-container">
-                        <button onclick="startModule('video')" class="bg-brand-900 hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-lg shadow transition-colors">
-                            Proceed to Video Module <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SCREEN 6: Video Assessment -->
-            <section id="screen-video" class="w-full max-w-4xl mx-auto hidden fade-in">
-                <div class="mb-6 flex justify-between items-end">
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-900">Visual Communication Analysis</h2>
-                        <p class="text-sm text-slate-500">Respond to the prompt. Articulation and confidence metrics will be analyzed.</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-                    <!-- Video Feed -->
-                    <div class="md:col-span-3 relative bg-black rounded-xl overflow-hidden shadow-lg border border-slate-800 flex items-center justify-center min-h-[400px]">
-                        <video id="interview-video" autoplay muted playsinline class="absolute inset-0 w-full h-full object-cover transform scale-x-[-1]"></video>
-                        
-                        <div id="interview-rec-indicator" class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded flex items-center gap-2 z-20 opacity-0 transition-opacity">
-                            <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div> <span id="interview-timer" class="font-mono">01:00</span>
-                        </div>
-
-                        <!-- Enterprise AI Overlay -->
-                        <div id="ai-overlay" class="absolute inset-0 bg-slate-900/90 backdrop-blur-md z-30 hidden flex-col items-center justify-center p-8 font-mono border-2 border-brand-500">
-                            <i class="fa-solid fa-microchip text-4xl mb-6 text-brand-500 animate-pulse"></i>
-                            <h3 class="text-xl font-bold mb-2 text-white uppercase tracking-widest">Voxylet AI Processing</h3>
-                            <p id="ai-status-text" class="text-sm text-brand-400 mb-8 font-semibold">Initiating deep neural scan...</p>
-                            <div class="w-full max-w-sm h-2 bg-slate-800 rounded-full overflow-hidden">
-                                <div id="ai-progress-bar" class="h-full bg-brand-500 w-0 transition-all duration-300"></div>
+                                <!-- Nodes injected by JS -->
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Controls -->
-                    <div class="md:col-span-2 glass-panel border border-slate-200 rounded-xl p-6 flex flex-col shadow-sm">
-                        <div class="flex-grow">
-                            <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Assessment Prompt</h3>
-                            <div class="p-5 bg-white border border-slate-200 shadow-sm rounded-lg text-slate-800 text-sm leading-relaxed font-semibold">
-                                "Please describe a recent professional challenge you faced, detailing how you communicated effectively to resolve it."
-                            </div>
-                            
-                            <div class="mt-6 space-y-3">
-                                <div class="flex items-center gap-2 text-xs text-slate-500"><i class="fa-solid fa-check text-green-500"></i> Lighting acceptable</div>
-                                <div class="flex items-center gap-2 text-xs text-slate-500"><i class="fa-solid fa-check text-green-500"></i> Face centered</div>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-8">
-                            <button id="btn-start-vid" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-4 rounded-lg shadow transition-colors flex justify-center items-center gap-2 text-sm">
-                                <i class="fa-solid fa-video"></i> Begin Response (60s)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SCREEN 7: Results -->
-            <section id="screen-results" class="w-full max-w-3xl mx-auto hidden fade-in">
-                <div class="glass-panel border border-slate-200 shadow-sm rounded-xl overflow-hidden">
-                    <div class="bg-slate-900 text-white p-10 text-center relative overflow-hidden">
-                        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 20px 20px;"></div>
-                        <div class="w-20 h-20 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-4xl mx-auto mb-6 border border-green-500/30 relative z-10">
-                            <i class="fa-solid fa-shield-check"></i>
-                        </div>
-                        <h2 class="text-3xl font-bold mb-2 relative z-10">Assessment Concluded</h2>
-                        <p class="text-slate-400 text-sm relative z-10" id="result-user-name">Assessment data securely transmitted.</p>
-                    </div>
-
-                    <div class="p-8 sm:p-12">
-                        <div class="flex flex-col sm:flex-row justify-between items-center border-b border-slate-200 pb-8 mb-8">
-                            <div class="text-center sm:text-left mb-4 sm:mb-0">
-                                <p class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Overall Voxylet Score</p>
-                                <p class="text-xs text-slate-500">Benchmarked against global standards</p>
-                            </div>
-                            <div class="w-32 h-32 rounded-full border-8 border-slate-100 flex items-center justify-center relative">
-                                <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="46" fill="transparent" stroke="#2563eb" stroke-width="8" id="total-svg-ring" stroke-dasharray="289" stroke-dashoffset="289" class="transition-all duration-1500 ease-out"></circle>
-                                </svg>
-                                <span class="text-3xl font-bold text-slate-900" id="res-total">0%</span>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-6">
-                            <!-- Metric 1 -->
-                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <div class="flex justify-between items-center mb-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-list-check text-xs"></i></div>
-                                        <span class="text-sm font-bold text-slate-700">Syntax & Grammar</span>
+                        <!-- Right: Dynamic Data Display (7 cols) -->
+                        <div class="lg:col-span-7 reveal">
+                            <div class="card-premium p-8 md:p-12 min-h-[450px] flex flex-col relative overflow-hidden" id="info-panel">
+                                
+                                <div class="flex justify-between items-start mb-6 pb-6 border-b border-slate-100">
+                                    <div>
+                                        <div class="text-brand-600 font-mono text-xs font-bold uppercase tracking-wider mb-2" id="panel-tag">SYSTEM STANDBY</div>
+                                        <h4 class="text-3xl font-display font-bold text-slate-900" id="panel-title">Awaiting Interaction</h4>
                                     </div>
-                                    <span class="text-sm font-bold text-slate-900 bg-white px-2 py-1 rounded shadow-sm border border-slate-100" id="score-mcq">0/15</span>
-                                </div>
-                                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden"><div id="bar-mcq" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div></div>
-                            </div>
-                            
-                            <!-- Metric 2 -->
-                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <div class="flex justify-between items-center mb-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center"><i class="fa-solid fa-headphones text-xs"></i></div>
-                                        <span class="text-sm font-bold text-slate-700">Auditory Dictation</span>
+                                    <div class="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400" id="panel-icon">
+                                        <i class="fa-solid fa-arrow-pointer text-xl"></i>
                                     </div>
-                                    <span class="text-sm font-bold text-slate-900 bg-white px-2 py-1 rounded shadow-sm border border-slate-100" id="score-ls">0%</span>
                                 </div>
-                                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden"><div id="bar-ls" class="h-full bg-indigo-500 w-0 transition-all duration-1000 delay-300"></div></div>
-                            </div>
 
-                            <!-- Metric 3 -->
-                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <div class="flex justify-between items-center mb-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded bg-brand-100 text-brand-600 flex items-center justify-center"><i class="fa-solid fa-video text-xs"></i></div>
-                                        <span class="text-sm font-bold text-slate-700">Visual Comms AI</span>
+                                <div id="panel-desc" class="text-slate-600 text-lg leading-relaxed flex-grow">
+                                    <p>Select a node from the architectural diagram to review deep-level specifications for our infrastructure, AI engines, databases, and secure access controls.</p>
+                                    
+                                    <!-- Visual placeholder for empty state -->
+                                    <div class="mt-8 grid grid-cols-3 gap-4 opacity-50">
+                                        <div class="h-2 bg-slate-200 rounded w-full"></div>
+                                        <div class="h-2 bg-slate-200 rounded w-3/4"></div>
+                                        <div class="h-2 bg-slate-200 rounded w-5/6"></div>
                                     </div>
-                                    <span class="text-sm font-bold text-slate-900 bg-white px-2 py-1 rounded shadow-sm border border-slate-100" id="score-vid">0%</span>
                                 </div>
-                                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden"><div id="bar-vid" class="h-full bg-brand-500 w-0 transition-all duration-1000 delay-500"></div></div>
+                                
+                                <div class="mt-8 pt-6 border-t border-slate-100">
+                                    <button id="read-more-btn" onclick="openDrawer()" class="group flex items-center gap-2 text-brand-600 font-semibold opacity-50 cursor-not-allowed pointer-events-none transition-all">
+                                        Read Technical Specifications 
+                                        <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-between items-center">
-                        <p class="text-[11px] font-medium text-slate-500"><i class="fa-solid fa-lock text-slate-400 mr-1"></i> Data recorded in Proctorix Vault</p>
-                        <p class="text-[11px] font-bold text-brand-600">You may securely close this window.</p>
+
                     </div>
                 </div>
             </section>
 
+            <section id="roles" class="py-24 relative bg-slate-50">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div class="text-center mb-20 reveal">
+                        <h2 class="text-brand-600 font-semibold tracking-wide uppercase text-sm mb-3">Multi-Tenant Isolation</h2>
+                        <h3 class="text-4xl md:text-5xl font-display font-bold text-brand-950 mb-6">Role-Based Access Hierarchy</h3>
+                        <p class="text-slate-600 text-lg max-w-3xl mx-auto">
+                            VOXYLET ensures absolute segregation of institutional data. Observe the deployment hierarchy using an organizational example.
+                        </p>
+                    </div>
+
+                    <div class="max-w-4xl mx-auto relative">
+                        <div class="flow-line hidden md:block"></div>
+
+                        <!-- Step 1: Super Admin -->
+                        <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-12 mb-16 reveal">
+                            <div class="md:w-1/2 md:text-right order-2 md:order-1">
+                                <h4 class="text-xl font-bold text-slate-900">Super Admin (System Owner)</h4>
+                                <p class="text-slate-600 mt-2">Manages the global domain. Provisions new client workspaces and generates dedicated subdomains automatically.</p>
+                            </div>
+                            <div class="w-16 h-16 rounded-2xl bg-white border-2 border-brand-500 flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/20 z-10 order-1 md:order-2">
+                                <i class="fa-solid fa-globe text-2xl text-brand-600"></i>
+                            </div>
+                            <div class="md:w-1/2 order-3 text-left">
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-sm font-mono text-slate-600 inline-block">
+                                    <span class="text-purple-600 font-semibold">POST</span> /api/org/create<br>
+                                    <span class="text-slate-400">domain:</span> "lbrce.voxylet.in"
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Org Admin -->
+                        <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-12 mb-16 reveal">
+                            <div class="md:w-1/2 text-right order-3 md:order-1 hidden md:block">
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-sm font-mono text-slate-600 inline-block text-left">
+                                    <span class="text-blue-600 font-semibold">ACTION:</span> Create Batch<br>
+                                    <span class="text-slate-400">Added:</span> "AIDS Sec B"
+                                </div>
+                            </div>
+                            <div class="w-16 h-16 rounded-2xl bg-white border-2 border-blue-400 flex items-center justify-center shrink-0 shadow-lg shadow-blue-400/20 z-10 order-1 md:order-2">
+                                <i class="fa-solid fa-building-columns text-2xl text-blue-500"></i>
+                            </div>
+                            <div class="md:w-1/2 text-left order-2 md:order-3">
+                                <h4 class="text-xl font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                                    Organization Admin
+                                    <span class="text-xs bg-slate-100 border border-slate-200 px-2 py-1 rounded-md text-slate-600 font-normal">lbrce.voxylet.in</span>
+                                </h4>
+                                <p class="text-slate-600 mt-2">Logs into specific subdomain. Creates SME accounts, manages the exam library, and schedules tests to specific batches.</p>
+                            </div>
+                            <!-- Mobile only visual -->
+                            <div class="w-full text-center order-4 block md:hidden">
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-sm font-mono text-slate-600 inline-block text-left w-full">
+                                    <span class="text-blue-600 font-semibold">ACTION:</span> Create Batch<br>
+                                    <span class="text-slate-400">Added:</span> "AIDS Sec B"
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: SME -->
+                        <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-12 mb-16 reveal">
+                            <div class="md:w-1/2 md:text-right order-2 md:order-1">
+                                <h4 class="text-xl font-bold text-slate-900">SME / Faculty</h4>
+                                <p class="text-slate-600 mt-2">Configures tests (uploads audio, defines questions). Assigns tests to batches or invites guests. Reviews AI-generated results.</p>
+                            </div>
+                            <div class="w-16 h-16 rounded-2xl bg-white border-2 border-amber-400 flex items-center justify-center shrink-0 shadow-lg shadow-amber-400/20 z-10 order-1 md:order-2">
+                                <i class="fa-solid fa-user-tie text-2xl text-amber-500"></i>
+                            </div>
+                            <div class="md:w-1/2 order-3 text-left">
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-sm font-mono text-slate-600 inline-block">
+                                    <span class="text-amber-600 font-semibold">STATUS:</span> Test Scheduled<br>
+                                    <span class="text-slate-400">Modules:</span> [MCQ, JAM]
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Student -->
+                        <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-12 reveal">
+                            <div class="md:w-1/2 text-right order-3 md:order-1 hidden md:block">
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-sm font-mono text-slate-600 inline-block text-left">
+                                    <span class="text-emerald-600 font-semibold">EVALUATION:</span> Pending<br>
+                                    <span class="text-slate-400">Audio -> S3:</span> Success
+                                </div>
+                            </div>
+                            <div class="w-16 h-16 rounded-2xl bg-white border-2 border-emerald-400 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-400/20 z-10 order-1 md:order-2">
+                                <i class="fa-solid fa-headset text-2xl text-emerald-500"></i>
+                            </div>
+                            <div class="md:w-1/2 text-left order-2 md:order-3">
+                                <h4 class="text-xl font-bold text-slate-900">Student / Guest</h4>
+                                <p class="text-slate-600 mt-2">Completes hardware mic checks and executes strict-timed AI evaluated modules. Views published results on dashboard.</p>
+                            </div>
+                             <!-- Mobile only visual -->
+                             <div class="w-full text-center order-4 block md:hidden">
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-sm font-mono text-slate-600 inline-block text-left w-full">
+                                    <span class="text-emerald-600 font-semibold">EVALUATION:</span> Pending<br>
+                                    <span class="text-slate-400">Audio -> S3:</span> Success
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <section id="modules" class="py-24 relative bg-white border-t border-slate-200">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center mb-16 reveal">
+                        <h2 class="text-brand-600 font-semibold tracking-wide uppercase text-sm mb-3">Evaluation Matrix</h2>
+                        <h3 class="text-4xl md:text-5xl font-display font-bold text-brand-950 mb-4">Core Test Modules</h3>
+                        <p class="text-slate-600 text-lg max-w-2xl mx-auto">
+                            Executing under strict, DynamoDB-managed timed conditions, these modules gather precise data for comprehensive linguistic analysis.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 reveal">
+                        
+                        <div class="card-premium p-8 group">
+                            <div class="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-6 group-hover:scale-110 transition-transform origin-left border border-blue-100">
+                                <i class="fa-solid fa-list-check"></i>
+                            </div>
+                            <h4 class="text-xl font-bold text-slate-900 mb-3">1. MCQ & Fill Blanks</h4>
+                            <p class="text-slate-600 leading-relaxed">Foundational grammar and vocabulary assessment. Timers synchronized via WebSocket to ensure zero lag discrepancy.</p>
+                        </div>
+
+                        <div class="card-premium p-8 group">
+                            <div class="w-12 h-12 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xl mb-6 group-hover:scale-110 transition-transform origin-left border border-purple-100">
+                                <i class="fa-solid fa-book-open-reader"></i>
+                            </div>
+                            <h4 class="text-xl font-bold text-slate-900 mb-3">2. Read Aloud</h4>
+                            <p class="text-slate-600 leading-relaxed">Students read displayed text. AI engine compares the audio trajectory against native baselines for pronunciation accuracy.</p>
+                        </div>
+
+                        <div class="card-premium p-8 group">
+                            <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-6 group-hover:scale-110 transition-transform origin-left border border-emerald-100">
+                                <i class="fa-solid fa-ear-listen"></i>
+                            </div>
+                            <h4 class="text-xl font-bold text-slate-900 mb-3">3. Repeat Audio</h4>
+                            <p class="text-slate-600 leading-relaxed">Tests listening comprehension and working memory. Prompt plays once; student must replicate the phrasing exactly.</p>
+                        </div>
+
+                        <div class="card-premium p-8 group md:col-span-2 lg:col-span-1">
+                            <div class="w-12 h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-6 group-hover:scale-110 transition-transform origin-left border border-amber-100">
+                                <i class="fa-solid fa-stopwatch-20"></i>
+                            </div>
+                            <h4 class="text-xl font-bold text-slate-900 mb-3">4. Just-A-Minute (JAM)</h4>
+                            <p class="text-slate-600 leading-relaxed">Spontaneous speech evaluation on a given topic. Tracks hesitation, filler words, fluency, and overall prosody flow.</p>
+                        </div>
+
+                        <div class="card-premium p-8 group lg:col-span-2 relative overflow-hidden bg-brand-950 text-white border-none">
+                            <!-- Background accent -->
+                            <div class="absolute right-0 top-0 w-64 h-64 bg-brand-600 rounded-full blur-[80px] opacity-20 -translate-y-1/2 translate-x-1/4"></div>
+                            
+                            <div class="flex flex-col md:flex-row gap-8 items-start relative z-10">
+                                <div class="flex-grow">
+                                    <div class="w-12 h-12 rounded-lg bg-white/10 text-white flex items-center justify-center text-xl mb-6 border border-white/20">
+                                        <i class="fa-solid fa-pen-nib"></i>
+                                    </div>
+                                    <h4 class="text-2xl font-bold text-white mb-3">5. GenAI Essay Writing</h4>
+                                    <p class="text-slate-300 leading-relaxed mb-4 text-lg">
+                                        Students construct essays based on a provided storyline. Evaluated instantly by integrated <span class="text-white font-semibold">AWS Bedrock LLMs</span> for context adherence, grammar, and structural integrity.
+                                    </p>
+                                </div>
+                                <div class="shrink-0 bg-white/5 backdrop-blur-md p-5 rounded-xl border border-white/10 text-sm font-mono w-full md:w-72">
+                                    <div class="text-brand-400 mb-3 font-semibold flex items-center gap-2"><i class="fa-brands fa-aws"></i> BEDROCK_EVAL</div>
+                                    <div class="flex justify-between text-slate-400 mb-2"><span>Grammar:</span> <span class="text-white font-medium">94%</span></div>
+                                    <div class="w-full h-1.5 bg-white/10 rounded-full mb-3"><div class="w-[94%] h-full bg-green-400 rounded-full"></div></div>
+                                    <div class="flex justify-between text-slate-400 mb-2"><span>Context:</span> <span class="text-white font-medium">88%</span></div>
+                                    <div class="w-full h-1.5 bg-white/10 rounded-full"><div class="w-[88%] h-full bg-blue-400 rounded-full"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="waitlist" class="py-24 relative bg-white border-t border-slate-200 text-center">
+                <div class="max-w-3xl mx-auto px-4 reveal">
+                    <div class="w-20 h-20 mx-auto bg-blue-50 rounded-2xl flex items-center justify-center mb-8 border border-blue-100">
+                        <i class="fa-solid fa-rocket text-3xl text-brand-600"></i>
+                    </div>
+                    <h2 class="text-3xl md:text-5xl font-display font-bold text-brand-950 mb-6">Ready to upgrade institutional testing?</h2>
+                    <p class="text-slate-600 text-lg mb-10">Currently onboarding enterprise clients for Q4 deployment. Request domain provisioning below.</p>
+                    
+                    <form onsubmit="event.preventDefault(); alert('Request submitted successfully. Our team will contact you.');" class="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
+                        <input type="email" placeholder="Institution Email Address" required class="flex-grow bg-white border border-slate-300 rounded-xl px-5 py-4 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-shadow shadow-sm">
+                        <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-8 py-4 rounded-xl transition-all shadow-md shadow-blue-500/20 whitespace-nowrap">
+                            Request Access
+                        </button>
+                    </form>
+                </div>
+            </section>
+            
+            <footer class="bg-slate-50 py-12 border-t border-slate-200 text-center">
+                 <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between text-sm text-slate-500">
+                     <div class="flex items-center gap-2 mb-4 md:mb-0">
+                         <span>A product of Xeta Tech Solutions</span>
+                         <img src="https://res.cloudinary.com/djdwpjm7x/image/upload/v1771001520/Xeta_Header_wfw12w.png" alt="Xeta Tech" class="h-6 object-contain mix-blend-multiply opacity-70">
+                     </div>
+                     <p>&copy; 2026 Voxylet Enterprise. All rights reserved.</p>
+                 </div>
+            </footer>
         </main>
     </div>
 
+    <div id="about-modal" class="fixed inset-0 z-50 overlay-bg flex items-center justify-center p-4 sm:p-6" onclick="if(event.target === this) closeModal('about-modal')">
+        <div class="full-screen-modal bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 relative">
+            
+            <!-- Header -->
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center text-brand-600 border border-brand-100">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <span class="font-display font-bold text-slate-900 text-lg">Platform Architecture</span>
+                </div>
+                <button onclick="closeModal('about-modal')" class="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-8 overflow-y-auto custom-scrollbar">
+                <h2 class="text-3xl font-display font-bold text-slate-900 mb-6">Technical Deep Dive</h2>
+                <p class="text-lg text-slate-600 mb-10 leading-relaxed">VOXYLET is engineered from the ground up as a fully managed, multitenant B2B SaaS platform. It eschews traditional monolithic designs for a highly distributed cloud-native architecture optimized for real-time audio processing and AI evaluation.</p>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                        <h3 class="text-brand-600 font-bold text-sm uppercase tracking-wide mb-3">01. Node.js Backend</h3>
+                        <p class="text-slate-600">Powered by a robust single-instance Node.js backend handling all business logic, routing, and API integrations within a unified, high-performance execution environment.</p>
+                    </div>
+                    <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                        <h3 class="text-brand-600 font-bold text-sm uppercase tracking-wide mb-3">02. AWS DynamoDB</h3>
+                        <p class="text-slate-600">Manages high-speed session tracking and strict exam timers, ensuring millisecond-synchronized state across all active test environments globally.</p>
+                    </div>
+                    <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                        <h3 class="text-brand-600 font-bold text-sm uppercase tracking-wide mb-3">03. AWS S3 & SES</h3>
+                        <p class="text-slate-600">S3 acts as the secure repository for direct streaming of student recorded responses. AWS SES handles automated transactional emails to students and faculty.</p>
+                    </div>
+                    <div class="p-6 rounded-2xl bg-blue-50 border border-blue-200">
+                        <h3 class="text-blue-700 font-bold text-sm uppercase tracking-wide mb-3">04. AI Engines</h3>
+                        <p class="text-slate-700">Integration with Wav2Vec2 and BiLSTM networks for trajectory-based speech signal analysis. Generative modules powered by AWS Bedrock.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="drawer-overlay" class="fixed inset-0 z-50 overlay-bg flex justify-end" onclick="if(event.target === this) closeDrawer()">
+        <div id="tech-drawer" class="w-full sm:w-[450px] h-full side-drawer flex flex-col relative">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                <h3 class="font-display font-bold text-xl text-slate-900" id="drawer-title">Detailed Specification</h3>
+                <button onclick="closeDrawer()" class="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-grow bg-slate-50" id="drawer-content">
+                <!-- Content injected via JS -->
+            </div>
+            
+            <div class="p-6 border-t border-slate-200 bg-white">
+                 <button onclick="closeDrawer()" class="w-full py-3 rounded-xl border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors shadow-sm">Close Panel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- DATA & STATE ---
-        let userData = { name: '', email: '', mobile: '', org: '', desig: '' };
-        let scores = { mcq: 0, listenSpeak: 0, video: 0 };
-        let currentScreen = 'screen-register';
-        let globalStream = null;
-        let warningCount = 0;
-        let fullscreenExitCount = 0;
-        let testActive = false;
-        
-        // MCQ Data - 15 Questions total
-        const mcqDatabase = [
-            // Articles
-            { q: "He is ___ honest man.", options: ["a", "an", "the", "no article"], ans: 1, cat: "Articles" },
-            { q: "I saw ___ eagle flying in the sky.", options: ["a", "an", "the", "no article"], ans: 1, cat: "Articles" },
-            { q: "___ Earth revolves around the sun.", options: ["A", "An", "The", "No article"], ans: 2, cat: "Articles" },
-            { q: "Let's go to ___ park.", options: ["a", "an", "the", "no article"], ans: 2, cat: "Articles" },
-            { q: "She wants to be ___ astronaut.", options: ["a", "an", "the", "no article"], ans: 1, cat: "Articles" },
-            // Prepositions
-            { q: "She is good ___ solving puzzles.", options: ["in", "on", "at", "with"], ans: 2, cat: "Prepositions" },
-            { q: "The book is ___ the table.", options: ["in", "on", "at", "under"], ans: 1, cat: "Prepositions" },
-            { q: "He has been living here ___ 2010.", options: ["for", "since", "from", "in"], ans: 1, cat: "Prepositions" },
-            { q: "She is afraid ___ spiders.", options: ["of", "from", "with", "about"], ans: 0, cat: "Prepositions" },
-            { q: "We are traveling ___ train.", options: ["in", "on", "by", "with"], ans: 2, cat: "Prepositions" },
-            // Tenses
-            { q: "By the time I arrive, he ___ left.", options: ["will have", "would have", "has", "had"], ans: 0, cat: "Tenses" },
-            { q: "I ___ English for five years.", options: ["am studying", "have been studying", "study", "was studying"], ans: 1, cat: "Tenses" },
-            { q: "She ___ to the market yesterday.", options: ["goes", "going", "went", "gone"], ans: 2, cat: "Tenses" },
-            { q: "If it rains, we ___ the match.", options: ["cancel", "will cancel", "cancelled", "cancelling"], ans: 1, cat: "Tenses" },
-            { q: "The train ___ before we reached the station.", options: ["left", "has left", "had left", "will leave"], ans: 2, cat: "Tenses" }
-        ];
-        
-        let mcqList = [];
-        let currentMcqIndex = 0;
-        let selectedMcqOption = null;
-
-        // Listen & Speak Data - 3 Prompts
-        const dictationPrompts = [
-            "Innovation distinguishes between a leader and a follower.",
-            "Effective communication is the foundation of a successful team.",
-            "Please ensure all confidential documents are secured before leaving."
-        ];
-        let currentDictationIndex = 0;
-        let dictationScores = [];
-
-        // --- UTILITY FUNCTIONS ---
-        function switchScreen(targetId, sidebarStep = null) {
-            document.getElementById(currentScreen).classList.add('hidden');
-            document.getElementById(currentScreen).classList.remove('fade-in');
+        // --- 1. Bulletproof Intro Sequence Logic ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const introSequence = document.getElementById('intro-sequence');
             
-            const target = document.getElementById(targetId);
-            target.classList.remove('hidden');
-            target.classList.add('fade-in');
-            currentScreen = targetId;
-
-            if(sidebarStep) updateSidebar(sidebarStep);
-        }
-
-        function updateSidebar(activeStep) {
-            document.getElementById('sidebar').classList.remove('hidden');
-            const items = document.querySelectorAll('.step-item');
-            let foundActive = false;
-            
-            items.forEach(item => {
-                const icon = item.querySelector('.step-icon');
-                const title = item.querySelector('.step-title');
-                const iconI = icon.querySelector('i');
-
-                if(item.dataset.step === activeStep) {
-                    icon.className = 'w-7 h-7 rounded-full bg-blue-600 border-2 border-blue-200 flex items-center justify-center z-10 step-icon mt-0.5 shadow-md shadow-blue-500/30';
-                    iconI.className = `${iconI.className.split(' ')[0]} ${iconI.className.split(' ')[1]} text-[10px] text-white`;
-                    title.className = 'text-sm font-bold text-slate-900 step-title';
-                    foundActive = true;
-                } else if (!foundActive) {
-                    icon.className = 'w-7 h-7 rounded-full bg-brand-900 border-2 border-brand-800 flex items-center justify-center z-10 step-icon mt-0.5';
-                    iconI.className = 'fa-solid fa-check text-[10px] text-white';
-                    title.className = 'text-sm font-bold text-slate-500 step-title';
-                } else {
-                    icon.className = 'w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center z-10 step-icon mt-0.5';
-                    iconI.className = `${iconI.className.split(' ')[0]} ${iconI.className.split(' ')[1]} text-[10px] text-slate-400`;
-                    title.className = 'text-sm font-bold text-slate-400 step-title';
-                }
-            });
-        }
-
-        function enterFullScreen() {
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) elem.requestFullscreen().catch(()=>{});
-        }
-
-        // --- ANTI-CHEAT ---
-        // Tab switch tracking
-        document.addEventListener('visibilitychange', () => {
-            if (testActive && document.visibilityState === 'hidden') {
-                warningCount++;
-                document.getElementById('anti-cheat-warning').classList.remove('hidden');
-                document.getElementById('anti-cheat-warning').classList.add('flex');
-            }
-        });
-
-        // Fullscreen exit tracking
-        document.addEventListener('fullscreenchange', () => {
-            if (testActive && !document.fullscreenElement) {
-                fullscreenExitCount++;
-                warningCount++;
-                document.getElementById('anti-cheat-warning').classList.remove('hidden');
-                document.getElementById('anti-cheat-warning').classList.add('flex');
-            }
-        });
-
-        function dismissWarning() {
-            document.getElementById('anti-cheat-warning').classList.add('hidden');
-            document.getElementById('anti-cheat-warning').classList.remove('flex');
-            enterFullScreen();
-        }
-
-        // --- GLOBAL TIMER ---
-        let globalSeconds = 0;
-        setInterval(() => {
-            if(testActive) {
-                globalSeconds++;
-                const m = String(Math.floor(globalSeconds / 60)).padStart(2, '0');
-                const s = String(globalSeconds % 60).padStart(2, '0');
-                document.getElementById('global-time').innerText = `${m}:${s}`;
-            }
-        }, 1000);
-
-        // --- REGISTRATION ---
-        document.getElementById('reg-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            userData = {
-                name: document.getElementById('reg-name').value,
-                email: document.getElementById('reg-email').value,
-                mobile: document.getElementById('reg-mobile').value,
-                org: document.getElementById('reg-org').value,
-                desig: document.getElementById('reg-desig').value
-            };
-            switchScreen('screen-system', 'system');
-        });
-
-        // --- SYSTEM CHECK & PROCTOR INIT ---
-        document.getElementById('btn-grant-access').addEventListener('click', async function() {
-            const btn = this;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Initializing...';
-            btn.disabled = true;
-
-            try {
-                // Request BOTH explicitly so browsers don't prompt later for mic
-                globalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                
-                const proctorVid = document.getElementById('global-proctor-video');
-                proctorVid.srcObject = globalStream;
-                document.getElementById('proctor-widget').classList.remove('hidden');
-
-                // Update UI statuses
-                document.getElementById('icon-cam').classList.replace('text-slate-400', 'text-green-500');
-                document.getElementById('status-cam').innerText = 'Connected';
-                document.getElementById('status-cam').classList.add('text-green-600');
-                
-                document.getElementById('icon-mic').classList.replace('text-slate-400', 'text-green-500');
-                document.getElementById('status-mic').innerText = 'Active';
-                document.getElementById('status-mic').classList.add('text-green-600');
-
-                document.getElementById('icon-net').classList.replace('text-slate-400', 'text-green-500');
-                document.getElementById('status-net').innerText = 'Stable';
-                document.getElementById('status-net').classList.add('text-green-600');
-
-                btn.classList.add('hidden');
-                document.getElementById('btn-proceed-intro').classList.remove('hidden');
-
-            } catch (err) {
-                alert("Permissions denied. A simulated feed will be used for demonstration purposes.");
-                btn.classList.add('hidden');
-                document.getElementById('btn-proceed-intro').classList.remove('hidden');
-            }
-        });
-
-        document.getElementById('btn-proceed-intro').addEventListener('click', () => {
-            testActive = true;
-            enterFullScreen();
-            document.getElementById('header-timer').classList.remove('hidden');
-            document.getElementById('header-status').classList.remove('hidden');
-            document.getElementById('header-status').classList.add('flex');
-            switchScreen('screen-intro', 'system');
-            
-            // AI Logs Simulation
-            setInterval(() => {
-                const logs = ["[SYS] Heartbeat OK", "[AI] Face Match: 99.2%", "[AI] Audio levels normal", "[SYS] Encrypting stream", "[AI] Gaze centered"];
-                const el = document.getElementById('ai-live-logs');
-                el.innerText = logs[Math.floor(Math.random() * logs.length)];
-            }, 4000);
-        });
-
-        // --- MODULE ROUTING ---
-        function startModule(moduleName) {
-            if (moduleName === 'mcq') initMCQ();
-            else if (moduleName === 'listen') initListenSpeak();
-            else if (moduleName === 'video') initVideo();
-            else if (moduleName === 'results') submitResults();
-        }
-
-        // --- MODULE 1: MCQ ---
-        function initMCQ() {
-            // Randomize but keep all 15
-            mcqList = mcqDatabase.sort(() => Math.random() - 0.5);
-            currentMcqIndex = 0;
-            scores.mcq = 0;
-            switchScreen('screen-mcq', 'mcq');
-            document.getElementById('mcq-total').innerText = mcqList.length;
-            renderMCQ();
-        }
-
-        function renderMCQ() {
-            const qData = mcqList[currentMcqIndex];
-            document.getElementById('mcq-section-title').innerText = `Grammar: ${qData.cat}`;
-            document.getElementById('mcq-current').innerText = currentMcqIndex + 1;
-            document.getElementById('mcq-question-text').innerText = qData.q;
-            
-            const optionsContainer = document.getElementById('mcq-options');
-            optionsContainer.innerHTML = '';
-            selectedMcqOption = null;
-            document.getElementById('mcq-next-btn').disabled = true;
-
-            qData.options.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-4 rounded-lg border-2 border-slate-100 bg-white hover:border-brand-500 hover:shadow-md transition-all font-semibold text-slate-700 text-sm focus:outline-none";
-                btn.innerText = opt;
-                btn.onclick = () => selectMcqOption(btn, idx);
-                optionsContainer.appendChild(btn);
-            });
-        }
-
-        function selectMcqOption(btn, idx) {
-            const btns = document.getElementById('mcq-options').children;
-            for(let b of btns) {
-                b.classList.remove('border-brand-500', 'bg-brand-50', 'text-brand-900');
-                b.classList.add('border-slate-100', 'bg-white', 'text-slate-700');
-            }
-            btn.classList.remove('border-slate-100', 'bg-white', 'text-slate-700');
-            btn.classList.add('border-brand-500', 'bg-brand-50', 'text-brand-900');
-            
-            selectedMcqOption = idx;
-            document.getElementById('mcq-next-btn').disabled = false;
-        }
-
-        document.getElementById('mcq-next-btn').addEventListener('click', () => {
-            if (selectedMcqOption === mcqList[currentMcqIndex].ans) scores.mcq += 1;
-            
-            currentMcqIndex++;
-            if (currentMcqIndex < mcqList.length) {
-                renderMCQ();
-            } else {
-                startModule('listen');
-            }
-        });
-
-        // --- MODULE 2: LISTEN & SPEAK (Strict Timer Implementation) ---
-        let hasPlayedAudio = false;
-
-        function initListenSpeak() {
-            currentDictationIndex = 0;
-            dictationScores = [];
-            switchScreen('screen-listen', 'listen');
-            prepareDictationUI();
-        }
-
-        function prepareDictationUI() {
-            hasPlayedAudio = false;
-            document.getElementById('ls-current').innerText = currentDictationIndex + 1;
-            
-            // Reset UI states
-            document.getElementById('ls-play-area').classList.remove('hidden');
-            document.getElementById('ls-record-area').classList.add('hidden');
-            document.getElementById('ls-record-area').classList.remove('flex');
-            document.getElementById('ls-result-box').classList.add('hidden');
-            document.getElementById('ls-next-container').classList.add('hidden');
-            
-            const playBtn = document.getElementById('btn-play-audio');
-            playBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'ring-4', 'ring-blue-300', 'bg-blue-50');
-            document.getElementById('play-instruction').innerText = "Play Audio Prompt";
-            
-            document.getElementById('btn-start-record').classList.remove('hidden');
-            document.getElementById('ls-visualizer').classList.add('hidden');
-            document.getElementById('ls-visualizer').classList.remove('flex');
-            document.getElementById('record-status').innerText = "Awaiting input";
-            document.getElementById('record-status').classList.remove('text-red-600', 'animate-pulse');
-            document.getElementById('ls-timer-display').innerText = "00:10";
-        }
-
-        document.getElementById('btn-play-audio').addEventListener('click', function() {
-            if (hasPlayedAudio) return;
-            const btn = this;
-            const targetSentence = dictationPrompts[currentDictationIndex];
-            
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(targetSentence);
-                utterance.rate = 0.9; 
-                utterance.onstart = () => {
-                    btn.classList.add('ring-4', 'ring-blue-300', 'bg-blue-50');
-                    document.getElementById('play-instruction').innerText = "Playing...";
-                };
-                utterance.onend = () => {
-                    btn.classList.remove('ring-4', 'ring-blue-300', 'bg-blue-50');
-                    btn.classList.add('opacity-50', 'cursor-not-allowed');
-                    document.getElementById('play-instruction').innerText = "Prompt Delivered";
-                    hasPlayedAudio = true;
-                    setTimeout(() => {
-                        document.getElementById('ls-record-area').classList.remove('hidden');
-                        document.getElementById('ls-record-area').classList.add('flex', 'fade-in');
-                    }, 500);
-                };
-                window.speechSynthesis.speak(utterance);
-            } else {
-                hasPlayedAudio = true;
-                document.getElementById('ls-record-area').classList.remove('hidden');
-                document.getElementById('ls-record-area').classList.add('flex');
-            }
-        });
-
-        document.getElementById('btn-start-record').addEventListener('click', function() {
-            const btn = this;
-            btn.classList.add('hidden'); // Hide start button
-            
-            document.getElementById('ls-visualizer').classList.remove('hidden');
-            document.getElementById('ls-visualizer').classList.add('flex');
-            document.getElementById('record-status').innerText = "RECORDING ACTIVE - SPEAK NOW";
-            document.getElementById('record-status').classList.add('text-red-600', 'animate-pulse');
-
-            // --- STRICT 10 SECOND TIMER ---
-            let timeLeft = 10;
-            const timerDisplay = document.getElementById('ls-timer-display');
-            timerDisplay.innerText = `00:${timeLeft < 10 ? '0'+timeLeft : timeLeft}`;
-            
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            let recognition = null;
-            let capturedText = "";
-
-            if (SpeechRecognition) {
-                recognition = new SpeechRecognition();
-                recognition.lang = 'en-US';
-                recognition.interimResults = true;
-                recognition.onresult = (e) => capturedText = e.results[0][0].transcript;
-                try { recognition.start(); } catch(e){}
-            }
-
-            const interval = setInterval(() => {
-                timeLeft--;
-                timerDisplay.innerText = `00:0${timeLeft}`;
-                
-                if(timeLeft <= 0) {
-                    clearInterval(interval);
-                    if(recognition) try { recognition.stop(); } catch(e){}
-                    
-                    document.getElementById('ls-visualizer').classList.add('hidden');
-                    document.getElementById('ls-visualizer').classList.remove('flex');
-                    document.getElementById('record-status').innerText = "Processing Audio...";
-                    document.getElementById('record-status').classList.remove('text-red-600', 'animate-pulse');
-                    timerDisplay.innerText = "DONE";
-
-                    evaluateListenSpeak(capturedText, dictationPrompts[currentDictationIndex]);
-                }
-            }, 1000);
-        });
-
-        function evaluateListenSpeak(transcript, target) {
-            document.getElementById('ls-result-box').classList.remove('hidden');
-            
+            // Wait 3.5 seconds to let animations play, then hide intro
             setTimeout(() => {
-                let pScore = 0;
-                if(!transcript || transcript.trim() === "") {
-                    // Fallback simulated AI if browser blocked voice recognition API
-                    pScore = Math.floor(Math.random() * 20) + 70; // 70-90
-                } else {
-                    // Better Evaluation algorithm
-                    let tWords = target.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ');
-                    let rWords = transcript.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ');
-                    let matches = 0;
-                    rWords.forEach(w => { if(tWords.includes(w)) matches++; });
-                    let accuracy = (matches / tWords.length) * 100;
-                    pScore = Math.min(100, Math.max(50, accuracy + 25)); // Boost slightly for AI fuzziness
-                }
+                introSequence.classList.add('hide');
                 
-                dictationScores.push(pScore);
+                // Remove the overflow hidden to allow scrolling
+                document.body.classList.remove('intro-active');
                 
-                const nextBtn = document.getElementById('btn-ls-next-prompt');
-                nextBtn.classList.remove('hidden');
-                
-                if (currentDictationIndex < 2) {
-                    nextBtn.innerHTML = 'Next Prompt <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>';
-                    nextBtn.onclick = () => {
-                        currentDictationIndex++;
-                        prepareDictationUI();
-                    };
-                } else {
-                    // Final prompt done
-                    scores.listenSpeak = Math.round(dictationScores.reduce((a, b) => a + b, 0) / dictationScores.length);
-                    nextBtn.classList.add('hidden'); // Hide prompt button
-                    document.getElementById('ls-next-container').classList.remove('hidden'); // Show module advance
-                }
-            }, 1500); // Give AI "processing" time
-        }
-
-        // --- MODULE 3: VIDEO ASSESSMENT ---
-        function initVideo() {
-            switchScreen('screen-video', 'video');
-            if(globalStream) {
-                document.getElementById('interview-video').srcObject = globalStream;
-            }
-        }
-
-        document.getElementById('btn-start-vid').addEventListener('click', function() {
-            const btn = this;
-            btn.disabled = true;
-            btn.classList.replace('bg-red-600', 'bg-slate-300');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Recording...';
-            
-            const recInd = document.getElementById('interview-rec-indicator');
-            recInd.classList.remove('opacity-0');
-            
-            let timeLeft = 60; // 60s for Visual Comms
-            const timerEl = document.getElementById('interview-timer');
-            timerEl.innerText = `01:00`;
-            
-            const interval = setInterval(() => {
-                timeLeft--;
-                const m = String(Math.floor(timeLeft / 60)).padStart(2, '0');
-                const s = String(timeLeft % 60).padStart(2, '0');
-                timerEl.innerText = `${m}:${s}`;
-                
-                if(timeLeft <= 0) {
-                    clearInterval(interval);
-                    recInd.classList.add('opacity-0');
-                    processVideoAI();
-                }
-            }, 1000);
+                // Completely remove from DOM after fade out finishes to prevent overlay issues
+                setTimeout(() => {
+                    introSequence.style.display = 'none';
+                }, 1000); 
+            }, 3500); 
         });
 
-        function processVideoAI() {
-            const overlay = document.getElementById('ai-overlay');
+        // --- Mobile Menu Logic ---
+        document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+
+        // --- Data for Interactive Ecosystem/Architecture ---
+        const archData = [
+            { id: 'db', icon: 'fa-database', tag: 'DYNAMO_DB', title: 'AWS DynamoDB',
+              desc: 'Crucial for maintaining strict test environments. Manages millisecond-accurate session tracking, synchronization of timers, and immediate state persistence.',
+              details: `
+                  <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                      <div class="font-mono text-xs text-green-600 font-semibold">> Latency: < 10ms</div>
+                      <div class="font-mono text-xs text-blue-600 font-semibold">> Pattern: Key-Value Document</div>
+                      <div class="h-px w-full bg-slate-100 my-2"></div>
+                      <p class="text-sm text-slate-600">DynamoDB ensures that if a student's connection drops during a timed 'JAM' session, the exact millisecond is recorded, preventing timing exploits upon reconnection.</p>
+                  </div>`
+            },
+            { id: 'storage', icon: 'fa-box-archive', tag: 'AWS_S3', title: 'S3 & Secure Transfer',
+              desc: 'The highly durable storage backbone. Handles the secure delivery of master audio prompts and directly ingests incoming audio streams from client browsers.',
+              details: `
+                  <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                      <div class="font-mono text-xs text-amber-600 font-semibold">> Buckets: Encrypted AES-256</div>
+                      <div class="font-mono text-xs text-amber-600 font-semibold">> Transfer: Pre-signed URLs</div>
+                      <div class="h-px w-full bg-slate-100 my-2"></div>
+                      <p class="text-sm text-slate-600">By utilizing pre-signed URLs, the Node.js backend is bypassed for heavy audio file transfers, drastically reducing server load during mass concurrent exams.</p>
+                  </div>`
+            },
+            { id: 'ai', icon: 'fa-brain', tag: 'WAV2VEC2', title: 'BiLSTM AI Engine',
+              desc: 'Utilizes Wav2Vec2 and BiLSTM networks to analyze the actual trajectory of speech signals, evaluating pronunciation accuracy, hesitations, and native-likeness.',
+              details: `
+                  <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                      <div class="flex items-center gap-2"><i class="fa-solid fa-microchip text-purple-600"></i> <span class="text-sm font-bold text-slate-900">Trajectory Processing</span></div>
+                      <p class="text-sm text-slate-600 mb-2">Bi-directional networks allow the AI to understand context from both the past and future of the audio stream simultaneously.</p>
+                      <div class="p-3 bg-slate-50 rounded border border-slate-100 font-mono text-xs text-purple-700">
+                          VECTORS = [pronunciation, fluency, filler_count]
+                      </div>
+                  </div>`
+            },
+            { id: 'llm', icon: 'fa-pen-clip', tag: 'BEDROCK', title: 'AWS Bedrock LLMs',
+              desc: 'Integrated foundational models specifically tuned for assessing the Essay Writing module. Evaluates text submissions against SME storylines.',
+              details: `
+                  <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                      <p class="text-sm text-slate-600 mb-4">Replaces manual faculty grading with instant, objective, and detailed rubrics based on deep linguistic models.</p>
+                      <div class="w-full h-2 bg-slate-100 rounded overflow-hidden mb-1"><div class="w-[94%] h-full bg-brand-500"></div></div>
+                      <div class="text-xs text-slate-500 font-medium mb-3">Grammar Accuracy</div>
+                      <div class="w-full h-2 bg-slate-100 rounded overflow-hidden mb-1"><div class="w-[88%] h-full bg-brand-500"></div></div>
+                      <div class="text-xs text-slate-500 font-medium">Context Adherence</div>
+                  </div>`
+            }
+        ];
+
+        // --- Render Interactive Circle ---
+        const orbitContainer = document.getElementById('tech-dial');
+        const radius = window.innerWidth < 768 ? 120 : 160; // Responsive radius
+        let activeArchData = null;
+
+        archData.forEach((data, index) => {
+            const angle = (index / archData.length) * (2 * Math.PI) - (Math.PI / 2);
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+
+            const node = document.createElement('div');
+            node.className = 'orbit-node';
+            // Center the nodes based on container size
+            node.style.left = `calc(50% + ${x}px - 32px)`; 
+            node.style.top = `calc(50% + ${y}px - 32px)`;
+            
+            node.innerHTML = `
+                <i class="fa-solid ${data.icon}"></i>
+                <div class="node-label">${data.title}</div>
+            `;
+
+            node.addEventListener('click', () => updatePanel(data, node));
+            orbitContainer.appendChild(node);
+        });
+
+        // Update Panel Content
+        function updatePanel(data, nodeElement) {
+            document.querySelectorAll('.orbit-node').forEach(n => n.classList.remove('active'));
+            nodeElement.classList.add('active');
+            
+            const panel = document.getElementById('info-panel');
+            
+            // Brief fade effect
+            panel.style.opacity = '0.5';
+            setTimeout(() => {
+                document.getElementById('panel-tag').textContent = data.tag;
+                document.getElementById('panel-title').textContent = data.title;
+                document.getElementById('panel-icon').innerHTML = `<i class="fa-solid ${data.icon} text-2xl"></i>`;
+                document.getElementById('panel-icon').className = `w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-brand-600 shadow-sm`;
+                
+                document.getElementById('panel-desc').innerHTML = `<p class="animate-fade-in-up">${data.desc}</p>`;
+
+                const btn = document.getElementById('read-more-btn');
+                btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                
+                panel.style.opacity = '1';
+            }, 150);
+            
+            activeArchData = data;
+        }
+
+        // --- Modal & Drawer Logic ---
+        function openModal(id) {
+            const overlay = document.getElementById(id);
             overlay.classList.remove('hidden');
-            overlay.classList.add('flex');
-            
-            const pBar = document.getElementById('ai-progress-bar');
-            const statusTexts = [
-                "Extracting vocal cadence metrics...", 
-                "Mapping facial articulation points...", 
-                "Calculating confidence indexing...", 
-                "Generating secure hash..."
-            ];
-            let step = 0;
-            
-            const aiInterval = setInterval(() => {
-                step++;
-                pBar.style.width = `${step * 25}%`;
-                if(step < 4) {
-                    document.getElementById('ai-status-text').innerText = statusTexts[step];
-                } else {
-                    clearInterval(aiInterval);
-                    scores.video = Math.floor(Math.random() * (96 - 82 + 1)) + 82; // Stronger bound 82-96
-                    setTimeout(() => startModule('results'), 1000);
-                }
-            }, 1200);
+            // Force reflow
+            void overlay.offsetWidth;
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
-        // --- SUBMISSION & RESULTS ---
-        function submitResults() {
-            testActive = false;
-            document.getElementById('proctor-widget').classList.add('opacity-0'); // Hide proctor
-            
-            // Stop Camera
-            if(globalStream) {
-                globalStream.getTracks().forEach(t => t.stop());
-            }
-
-            const mcqPercent = Math.round((scores.mcq / 15) * 100);
-            const lsPercent = scores.listenSpeak;
-            const vidPercent = scores.video;
-            const totalPercent = Math.round((mcqPercent + lsPercent + vidPercent) / 3);
-
-            const payload = {
-                candidate_name: userData.name,
-                work_email: userData.email,
-                mobile: userData.mobile,
-                organization: userData.org,
-                designation: userData.desig,
-                tab_switch_warnings: warningCount,
-                fullscreen_exits: fullscreenExitCount,
-                mcq_score_raw: `${scores.mcq}/15`,
-                mcq_score_percent: `${mcqPercent}%`,
-                dictation_score: `${lsPercent}%`,
-                video_ai_score: `${vidPercent}%`,
-                overall_score: `${totalPercent}%`,
-                _subject: `Proctorix Result: ${userData.name} - ${totalPercent}%`
-            };
-
-            // Transmit to Formspree
-            fetch('https://formspree.io/f/mdalvqap', {
-                method: 'POST',
-                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(() => {
-                showFinalReport(totalPercent, mcqPercent, lsPercent, vidPercent);
-            }).catch(() => {
-                showFinalReport(totalPercent, mcqPercent, lsPercent, vidPercent);
-            });
-        }
-
-        function showFinalReport(total, mcqP, lsP, vidP) {
-            switchScreen('screen-results');
-            document.getElementById('header-status').innerHTML = '<div class="w-2 h-2 rounded-full bg-slate-400"></div> Session Concluded';
-            document.getElementById('header-status').classList.replace('bg-green-50', 'bg-slate-100');
-            document.getElementById('header-status').classList.replace('border-green-200', 'border-slate-300');
-            document.getElementById('header-status').classList.replace('text-slate-600', 'text-slate-500');
-
-            document.getElementById('result-user-name').innerText = `Candidate: ${userData.name.toUpperCase()} | ID: VOX-${Math.floor(Math.random()*90000)+10000}`;
-            
-            // Animate Ring
+        function closeModal(id) {
+            const overlay = document.getElementById(id);
+            overlay.classList.remove('active');
             setTimeout(() => {
-                const ring = document.getElementById('total-svg-ring');
-                const offset = 289 - (289 * total) / 100;
-                ring.style.strokeDashoffset = offset;
-            }, 500);
-
-            animateValue('res-total', 0, total, 1500, '%');
-            
-            document.getElementById('score-mcq').innerText = `${scores.mcq}/15`;
-            setTimeout(() => document.getElementById('bar-mcq').style.width = `${mcqP}%`, 800);
-            
-            document.getElementById('score-ls').innerText = `${lsP}%`;
-            setTimeout(() => document.getElementById('bar-ls').style.width = `${lsP}%`, 1100);
-            
-            document.getElementById('score-vid').innerText = `${vidP}%`;
-            setTimeout(() => document.getElementById('bar-vid').style.width = `${vidP}%`, 1400);
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 400); 
         }
 
-        function animateValue(id, start, end, duration, suffix = '') {
-            if (start === end) return;
-            let range = end - start;
-            let current = start;
-            let increment = end > start ? 1 : -1;
-            let stepTime = Math.abs(Math.floor(duration / range));
-            let obj = document.getElementById(id);
-            let timer = setInterval(function() {
-                current += increment;
-                obj.innerHTML = current + suffix;
-                if (current == end) clearInterval(timer);
-            }, stepTime);
+        function openDrawer() {
+            if(!activeArchData) return;
+            
+            document.getElementById('drawer-title').textContent = activeArchData.title;
+            document.getElementById('drawer-content').innerHTML = `
+                <div class="mb-8">
+                    <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Overview</h4>
+                    <p class="text-slate-700 leading-relaxed">${activeArchData.desc}</p>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Technical Specifics</h4>
+                    ${activeArchData.details}
+                </div>
+            `;
+
+            const overlay = document.getElementById('drawer-overlay');
+            const drawer = document.getElementById('tech-drawer');
+            
+            overlay.classList.remove('hidden');
+            void overlay.offsetWidth;
+            overlay.classList.add('active');
+            drawer.classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
+
+        function closeDrawer() {
+            const overlay = document.getElementById('drawer-overlay');
+            const drawer = document.getElementById('tech-drawer');
+            
+            drawer.classList.remove('active');
+            overlay.classList.remove('active');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 400);
+        }
+
+        // --- Scroll Reveal Logic ---
+        function reveal() {
+            var reveals = document.querySelectorAll(".reveal");
+            for (var i = 0; i < reveals.length; i++) {
+                var windowHeight = window.innerHeight;
+                var elementTop = reveals[i].getBoundingClientRect().top;
+                var elementVisible = 100;
+                if (elementTop < windowHeight - elementVisible) {
+                    reveals[i].classList.add("active");
+                }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        // Initial check
+        setTimeout(reveal, 100);
     </script>
 </body>
 </html>
