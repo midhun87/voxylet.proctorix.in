@@ -1,0 +1,56 @@
+<!-- Primary Landing Page -->
+<url>
+    <loc>https://voxylet.proctorix.in/</loc>
+    <lastmod>2026-05-14T12:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+</url>
+
+<!-- 
+  NOTE: Google generally does not index standard anchor links (e.g., /#ecosystem) 
+  as separate pages. As VOXYLET grows, you should convert these sections 
+  into their own physical pages or server-side rendered routes to rank for 
+  specific keywords like "Communication Test Architecture". 
+  
+  Below are the planned SEO routes for when the platform scales. 
+-->
+
+<!-- Planned: Platform / Architecture -->
+<!--
+<url>
+    <loc>https://voxylet.proctorix.in/platform/architecture</loc>
+    <lastmod>2026-05-14T12:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+</url>
+-->
+
+<!-- Planned: Test Modules -->
+<!--
+<url>
+    <loc>https://voxylet.proctorix.in/platform/modules</loc>
+    <lastmod>2026-05-14T12:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+</url>
+-->
+
+<!-- Planned: Role-Based Access Control -->
+<!--
+<url>
+    <loc>https://voxylet.proctorix.in/platform/access-control</loc>
+    <lastmod>2026-05-14T12:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+</url>
+-->
+
+<!-- Planned: Waitlist / Contact -->
+<!--
+<url>
+    <loc>https://voxylet.proctorix.in/request-access</loc>
+    <lastmod>2026-05-14T12:00:00+00:00</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+</url>
+-->
